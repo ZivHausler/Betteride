@@ -39,15 +39,16 @@ app.post("/pushTokenToUser", async (req, res) => {
 });
 
 app.post("/loginUser", jsonParser, async (req, res) => {
-  const {user} = req.body;
-  db.ref("users").child(user.id).once("value",(snapshot) =>{
-    if(snapshot.val()){
+  const { user } = req.body;
+  console.log(user);
+  db.ref("users").child(user.id).once("value", (snapshot) => {
+    if (snapshot.val()) {
       // user exists!
       res.send(JSON.stringify(snapshot.val())).status(200);
     }
-    else{
+    else {
       // new user has been logged!
-      userObj = {firstName:user.givenName,lastName:user.familyName,photoUrl:user.photoUrl,email:user.email}
+      userObj = { firstName: user.givenName, lastName: user.familyName, photoUrl: user.photoUrl, email: user.email, token: user.token }
       db.ref("users").child(user.id).set(userObj)
       res.send(JSON.stringify(userObj)).status(200);
     }

@@ -99,13 +99,13 @@ const LoadingScreen = () => {
                         .then(response => response.json())
                         .then(response => {
                             savedData = {
-                                id:user.id,
-                                email:user.email,
-                                firstName:response.firstName,
-                                lastName:response.lastName,
-                                photoUrl:response.photoUrl
+                                id: user.id,
+                                email: user.email,
+                                firstName: response.firstName,
+                                lastName: response.lastName,
+                                photoUrl: response.photoUrl
                             }
-                            AsyncStorage.setItem('Users', JSON.stringify({id:user.id}))
+                            AsyncStorage.setItem('Users', JSON.stringify({ id: user.id }))
                                 .catch(error => console.log('error', error));
                             setUser(savedData);
                         })
@@ -119,7 +119,7 @@ const LoadingScreen = () => {
     const animateLoginPage = () => {
         Animated.timing(yAnimation, {
             toValue: 1,
-            duration: 1000,
+            duration: 600,
             useNativeDriver: true,
 
         }).start();
@@ -128,7 +128,7 @@ const LoadingScreen = () => {
     return (
         <View style={tw``}>
             <Animated.View style={[tw`h-full w-full z-10 overflow-hidden `, { borderBottomLeftRadius: borderRadius, borderBottomRightRadius: borderRadius, transform: [{ translateY }] }]}>
-                <Animated.View style={[styles.logoTextContainer, { transform: [{ translateY: translateLogo }] }]}>
+                <Animated.View style={[styles.logoTextContainer, tw``, { transform: [{ translateY: translateLogo }] }]}>
                     <Text style={styles.title}>Betteride</Text>
                     <Text style={styles.subTitle}>Get there.</Text>
                 </Animated.View>
@@ -143,8 +143,9 @@ const LoadingScreen = () => {
                 />
                 <Animated.Image style={[styles.carIcon, { transform: [{ translateY: translateLogo }] }]} source={{ uri: 'https://www.unlimitedtuning.nl/media/catalog/product/t/e/teslaaaa_5.png' }} />
             </Animated.View>
-            <View style={[tw`bg-white absolute bottom-0  w-full z-0 justify-center items-center`, { height: 200, }]}>
-                <LoginButton onPress={handleGoogleSignin} color={'gray-200'} text={'Login with Google'} url={'https://www.freepnglogos.com/uploads/google-logo-png/google-logo-icon-png-transparent-background-osteopathy-16.png'} />
+            <View style={[tw`bg-white absolute bottom-0  w-full z-0 justify-center items-center`, { height: 160, }]}>
+                <LoginButton onPress={handleGoogleSignin} color={['gray-300', 'black']} text={'Login with Google'} url={'https://www.freepnglogos.com/uploads/google-logo-png/google-logo-icon-png-transparent-background-osteopathy-16.png'} />
+                <LoginButton onPress={handleGoogleSignin} color={['blue-800', 'white']} text={'Login with Facebook'} url={'https://www.freepnglogos.com/uploads/aqua-blue-f-facebook-logo-png-22.png'} />
             </View>
         </View>
     )
