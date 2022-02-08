@@ -12,12 +12,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const features = [
     {
-        id: 0,
-        name: 'Profile Info',
-        icon: 'person',
-        link: 'Profile Screen'
-    },
-    {
         id: 1,
         name: 'Travel History',
         icon: 'history',
@@ -45,7 +39,7 @@ const MenuBar = ({ openCloseMenuBar }) => {
     const redirectHandler = (link) => {
         if (link === 'Logout') {
             AsyncStorage.removeItem('Betteride')
-                .then(res => navigation.navigate('Login'))
+                .then(res => navigation.navigate('Loading'))
                 .catch(error => console.log(`Couldn't remove user`));
         }
         else navigation.navigate(link)
@@ -55,17 +49,17 @@ const MenuBar = ({ openCloseMenuBar }) => {
         <View style={tw`w-full h-full z-0 flex-row`}>
             <BlurView intensity={100} tint='light' style={tw`w-2/3 h-full shadow-2xl `}>
                 <SafeAreaView>
-                    <View style={tw`flex justify-center items-center h-1/3 mt-4`}>
+                    <TouchableOpacity activeOpacity={0.9} onPress={() => redirectHandler('Profile Screen')} style={tw`flex justify-center items-center h-1/3 mt-4`}>
                         <View style={[tw`h-40 w-40 rounded-full`, styles.profilePicture]}>
                             <Image style={tw`h-40 w-40 rounded-full`} source={{ uri: user?.photoUrl }} />
                         </View>
                         <Text style={tw`font-bold text-lg mt-2`}>{user?.name}</Text>
                         <Text style={tw`text-gray-600 mb-5`}>{user?.email}</Text>
                         <View style={[tw`bg-gray-300 rounded-full`, { height: 0.8, width: '80%' }]} />
-                    </View>
+                    </TouchableOpacity>
                     <FlatList style={tw`flex h-2/3 pl-2`} data={features} keyExtractor={(item) => item.id}
                         renderItem={({ item: { name, icon, link } }) => (
-                            <TouchableOpacity onPress={() => redirectHandler(link)} style={tw`flex-row items-center p-5`}>
+                            <TouchableOpacity onPress={() => redirectHandler(link)} style={tw`flex-row items-center p-5 shadow-xl`}>
                                 <Icon
                                     style={[tw`mr-4 rounded-2xl p-3`, { backgroundColor: '#79aee2' }]} name={icon} type="material" color='black' size={25}
                                 />

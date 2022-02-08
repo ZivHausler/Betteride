@@ -38,6 +38,22 @@ app.post("/pushTokenToUser", async (req, res) => {
   res.sendStatus(200);
 });
 
+app.post("/loginUser", jsonParser, async (req, res) => {
+  const {user} = req.body;
+  db.ref("users").child(user.id).once("value",(snapshot) =>{
+    if(snapshot.val()){
+      // user exists!
+      res.send(JSON.stringify(snapshot.val())).status(200);
+    }
+    else{
+      // new user has been logged!
+      userObj = {firstName:user.givenName,lastName:user.familyName,photoUrl:user.photoUrl,email:user.email}
+      db.ref("users").child(user.id).set(userObj)
+      res.send(JSON.stringify(userObj)).status(200);
+    }
+  })
+});
+
 app.post("/pushTripLocationsToUser", jsonParser, async (req, res) => {
   const { userID, userOrigin, userDestination, vehiclePlateNumber } = req.body;
   db.ref("users").child(userID).child("trip").set({ userOrigin, userDestination, vehiclePlateNumber });

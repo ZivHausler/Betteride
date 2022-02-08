@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react'
-import { Image, StyleSheet, Text, View, ActivityIndicator } from 'react-native'
+import React, { useEffect, useState, useRef } from 'react'
+import { Image, StyleSheet, Text, View, ActivityIndicator, Animated, Button, Easing, TouchableOpacity } from 'react-native'
 import tw from 'tailwind-react-native-classnames'
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
@@ -10,6 +10,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import AppLoading from 'expo-app-loading';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { selectUserInfo, setUserInfo } from '../slices/userSlice';
+import LoginButton from '../components/LoginButton'
+import * as Google from 'expo-google-app-auth'
 
 const firebaseConfig = {
     apiKey: "AIzaSyAEDK9co1lmhgQ2yyb6C0iko4HE7sXaK38",
@@ -29,8 +31,35 @@ const LoadingScreen = () => {
     const dispatch = useDispatch();
     const navigation = useNavigation();
     const vehiclePlateNumber = useSelector(selectUserAssignedVehicle);
-    const user = useSelector(selectUserInfo);
+    // const user = useSelector(selectUserInfo);
+    const [user, setUser] = useState(null);
+    const yAnimation = useRef(new Animated.Value(0)).current;
+    const translateY = yAnimation.interpolate({ inputRange: [0, 1], outputRange: [0, -150] })
+    const translateLogo = yAnimation.interpolate({ inputRange: [0, 1], outputRange: [0, 75] })
+    const opacity = yAnimation.interpolate({ inputRange: [0, 1], outputRange: [1, 0] })
+    const borderRadius = yAnimation.interpolate({ inputRange: [0, 1], outputRange: [0, 30] })
 
+
+    useEffect(() => {
+        //Update the state you want to be updated
+        const rerender = navigation.addListener('focus', () => {
+            AsyncStorage.getItem('Users')
+                .then(result => {
+                    if (!result) {
+                        console.log('There is no logged user...');
+                        setTimeout(() => animateLoginPage(), 2000)
+                        // navigation.navigate('Login');
+                    }
+                    else {
+                        console.log('There is already a logged user!');
+                        dispatch(setUserInfo(JSON.parse(result)));
+                        setTimeout(() => navigation.navigate('Map'), 2000)
+                    }
+                })
+                .catch(error => console.log('error', error))
+        })
+        return rerender;
+    }, [navigation])
     // const getUserAssignedVehicle = async () => {
     //     let plateNumber = null;
     //     await get(child(ref(getDatabase()), `users/1/trip/vehiclePlateNumber`)).then((snapshot) => {
@@ -40,38 +69,83 @@ const LoadingScreen = () => {
     // };
     // getUserAssignedVehicle();
 
+
+
     useEffect(() => {
-        AsyncStorage.getItem('Betteride')
+        if (user) {
+            dispatch(setUserInfo(user));
+            setTimeout(() => navigation.navigate('Map'), 1000)
+        }
+    }, [user]);
+
+    const handleGoogleSignin = () => {
+        const config = {
+            iosClientId: `826611003690-t8vsfq83kh3m7s7komjrcj9trb5nn0nr.apps.googleusercontent.com`,
+            androidClientId: `826611003690-drnln24p7oc78s2s7dk1me9a84uasg0q.apps.googleusercontent.com`,
+            scope: ['profile', 'email'],
+        };
+
+        Google.logInAsync(config)
             .then(result => {
-                if (!result) {
-                    console.log('There is no logged user...');
-                    navigation.navigate('Login');
+                const { type, user } = result;
+                if (type === 'success') {
+                    fetch("http://10.100.102.233:3000/loginUser", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({ user })
+                    })
+                        .then(response => response.json())
+                        .then(response => {
+                            savedData = {
+                                id:user.id,
+                                email:user.email,
+                                firstName:response.firstName,
+                                lastName:response.lastName,
+                                photoUrl:response.photoUrl
+                            }
+                            AsyncStorage.setItem('Users', JSON.stringify({id:user.id}))
+                                .catch(error => console.log('error', error));
+                            setUser(savedData);
+                        })
+                        .catch(e => console.log(e))
                 }
-                else {
-                    console.log('There is already a logged user!');
-                    dispatch(setUserInfo(JSON.parse(result)));
-                    navigation.navigate('Map');
-                }
+                else console.log('Google signin was canceled');
             })
-            .catch(error => console.log('error', error))
-    }, [])
+            .catch(error => console.log('error', error));
+    }
+
+    const animateLoginPage = () => {
+        Animated.timing(yAnimation, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: true,
+
+        }).start();
+    }
 
     return (
-        <View style={tw`h-full w-full`}>
-            <View style={styles.logoTextContainer}>
-                <Text style={styles.title}>Betteride</Text>
-                <Text style={styles.subTitle}>Get there.</Text>
+        <View style={tw``}>
+            <Animated.View style={[tw`h-full w-full z-10 overflow-hidden `, { borderBottomLeftRadius: borderRadius, borderBottomRightRadius: borderRadius, transform: [{ translateY }] }]}>
+                <Animated.View style={[styles.logoTextContainer, { transform: [{ translateY: translateLogo }] }]}>
+                    <Text style={styles.title}>Betteride</Text>
+                    <Text style={styles.subTitle}>Get there.</Text>
+                </Animated.View>
+                <Animated.View style={[styles.loadingDiv, { opacity }]}>
+                    <Text style={styles.loadingText}>Give us a second to load the data for you</Text>
+                    <ActivityIndicator color={'white'} style={tw`mt-2`} />
+                </Animated.View>
+                <LinearGradient
+                    start={[0, 0]} end={[1, 1]}
+                    colors={['#84b6ea', '#49739c']}
+                    style={tw`w-full h-full`}
+                />
+                <Animated.Image style={[styles.carIcon, { transform: [{ translateY: translateLogo }] }]} source={{ uri: 'https://www.unlimitedtuning.nl/media/catalog/product/t/e/teslaaaa_5.png' }} />
+            </Animated.View>
+            <View style={[tw`bg-white absolute bottom-0  w-full z-0 justify-center items-center`, { height: 200, }]}>
+                <LoginButton onPress={handleGoogleSignin} color={'gray-200'} text={'Login with Google'} url={'https://www.freepnglogos.com/uploads/google-logo-png/google-logo-icon-png-transparent-background-osteopathy-16.png'} />
             </View>
-            <View style={styles.loadingDiv}>
-                <Text style={styles.loadingText}>Give us a second to load the data for you</Text>
-                <ActivityIndicator color={'white'} style={tw`mt-2`} />
-            </View>
-            <LinearGradient
-                start={[0, 0]} end={[1, 1]}
-                colors={['#84b6ea', '#49739c']}
-                style={tw`w-full h-full`}
-            />
-            <Image style={styles.carIcon} source={{ uri: 'https://www.unlimitedtuning.nl/media/catalog/product/t/e/teslaaaa_5.png' }} />
         </View>
     )
 }
