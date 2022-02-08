@@ -1,12 +1,15 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Image, StyleSheet, Text, View, ActivityIndicator } from 'react-native'
 import tw from 'tailwind-react-native-classnames'
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
-import { getDatabase, child, ref, get } from 'firebase/database';
+// import { getDatabase, child, ref, get } from 'firebase/database';
 import { initializeApp } from 'firebase/app';
 import { selectUserAssignedVehicle, setUserAssignedVehicle } from '../slices/navSlice';
 import { useDispatch, useSelector } from 'react-redux';
+import AppLoading from 'expo-app-loading';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { selectUserInfo, setUserInfo } from '../slices/userSlice';
 
 const firebaseConfig = {
     apiKey: "AIzaSyAEDK9co1lmhgQ2yyb6C0iko4HE7sXaK38",
@@ -25,21 +28,32 @@ initializeApp(firebaseConfig);
 const LoadingScreen = () => {
     const dispatch = useDispatch();
     const navigation = useNavigation();
-    const vehiclePlateNumber = useSelector(selectUserAssignedVehicle)
+    const vehiclePlateNumber = useSelector(selectUserAssignedVehicle);
+    const user = useSelector(selectUserInfo);
 
-    const getUserAssignedVehicle = async () => {
-        let plateNumber = null;
-        await get(child(ref(getDatabase()), `users/1/trip/vehiclePlateNumber`)).then((snapshot) => {
-            plateNumber = snapshot.val();
-        })
-        dispatch(setUserAssignedVehicle(plateNumber));
-    };
-    getUserAssignedVehicle();
+    // const getUserAssignedVehicle = async () => {
+    //     let plateNumber = null;
+    //     await get(child(ref(getDatabase()), `users/1/trip/vehiclePlateNumber`)).then((snapshot) => {
+    //         plateNumber = snapshot.val();
+    //     })
+    //     dispatch(setUserAssignedVehicle(plateNumber));
+    // };
+    // getUserAssignedVehicle();
 
     useEffect(() => {
-        setTimeout(() => {
-            navigation.navigate('Map');
-        }, 1000);
+        AsyncStorage.getItem('Betteride')
+            .then(result => {
+                if (!result) {
+                    console.log('There is no logged user...');
+                    navigation.navigate('Login');
+                }
+                else {
+                    console.log('There is already a logged user!');
+                    dispatch(setUserInfo(JSON.parse(result)));
+                    navigation.navigate('Map');
+                }
+            })
+            .catch(error => console.log('error', error))
     }, [])
 
     return (

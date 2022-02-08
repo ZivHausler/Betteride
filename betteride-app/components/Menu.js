@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Keyboard,Animated, StyleSheet, Text, Touchable, View } from 'react-native'
+import { Keyboard, Animated, StyleSheet, Text, Touchable, View } from 'react-native'
 import { Icon } from 'react-native-elements'
 import { TouchableOpacity } from 'react-native-gesture-handler'
 import tw from 'tailwind-react-native-classnames'
@@ -27,7 +27,6 @@ const Menu = () => {
         });
     };
 
-
     const openCloseMenuBar = () => {
         Keyboard.dismiss()
         if (showMenu) fadeOut();
@@ -38,7 +37,7 @@ const Menu = () => {
     }
 
     return (
-        <View style={tw`absolute ${showMenu ? 'h-full w-full' : (Platform.OS === 'ios' ? 'h-1 w-1' : 'w-20 h-28' )} z-40 `}>
+        <View style={tw`absolute ${showMenu ? 'h-full w-full' : (Platform.OS === 'ios' ? 'h-1 w-1' : 'w-20 h-28')} z-40 `}>
             <Animated.View style={[styles.fadingContainer, { opacity: fadeAnim }]}>
                 <MenuBar openCloseMenuBar={openCloseMenuBar} />
             </Animated.View>
