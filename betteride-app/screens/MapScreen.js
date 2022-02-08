@@ -1,4 +1,4 @@
-import React, { useEffect,useState } from "react";
+import React, { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { getUserAssignedVehicle, selectFirebaseRef, selectUserAssignedVehicle, setTabShown } from '../slices/navSlice'
 import { selectTabShown } from '../slices/navSlice';
@@ -14,8 +14,7 @@ import Menu from "../components/Menu";
 import FulfilledOrder from "../tabs/FulfilledOrder";
 
 const MapScreen = () => {
-  const navigation = useNavigation();
-  const dispatch = useDispatch()
+  const dispatch = useDispatch();
   const Stack = createStackNavigator();
   const tabShown = useSelector(selectTabShown);
   // const vehiclePlateNumber = useSelector(getUserAssignedVehicle);
@@ -25,15 +24,15 @@ const MapScreen = () => {
   useEffect(() => {
     switch (tabShown) {
       case 'order':
-        setCurrentTab(<OrderRide />)
+        setCurrentTab(<OrderRide />);
         break;
       case 'confirm':
-        setCurrentTab(<ConfirmOrder />)
+        setCurrentTab(<ConfirmOrder />);
         break;
       case 'fulfilled':
-        setCurrentTab(<FulfilledOrder />)
+        setCurrentTab(<FulfilledOrder />);
         break;
-      default: setCurrentTab(null)
+      default: setCurrentTab(null);
         break;
     }
   }, [tabShown])
