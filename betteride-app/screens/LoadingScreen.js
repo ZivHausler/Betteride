@@ -10,8 +10,10 @@ import { useDispatch, useSelector } from 'react-redux';
 import AppLoading from 'expo-app-loading';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { selectUserInfo, setUserInfo } from '../slices/userSlice';
-import LoginButton from '../components/LoginButton'
-import * as Google from 'expo-google-app-auth'
+import LoginButton from '../components/LoginButton';
+import * as Google from 'expo-google-app-auth';
+import * as Device from 'expo-device';
+
 
 const firebaseConfig = {
     apiKey: "AIzaSyAEDK9co1lmhgQ2yyb6C0iko4HE7sXaK38",
@@ -52,7 +54,7 @@ const LoadingScreen = () => {
                     }
                     else {
                         console.log('There is already a logged user!');
-                        dispatch(setUserInfo(JSON.parse(result)));
+                        dispatch(setUserInfo(JSON.parse(result).user));
                         setTimeout(() => navigation.navigate('Map'), 2000)
                     }
                 })
@@ -68,8 +70,6 @@ const LoadingScreen = () => {
     //     dispatch(setUserAssignedVehicle(plateNumber));
     // };
     // getUserAssignedVehicle();
-
-
 
     useEffect(() => {
         if (user) {
@@ -89,31 +89,40 @@ const LoadingScreen = () => {
             .then(result => {
                 const { type, user } = result;
                 if (type === 'success') {
-                    fetch("http://10.100.102.233:3000/loginUser", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify({ user })
-                    })
-                        .then(response => response.json())
-                        .then(response => {
-                            savedData = {
-                                id: user.id,
-                                email: user.email,
-                                firstName: response.firstName,
-                                lastName: response.lastName,
-                                photoUrl: response.photoUrl
-                            }
-                            AsyncStorage.setItem('Users', JSON.stringify({ id: user.id }))
-                                .catch(error => console.log('error', error));
-                            setUser(savedData);
+                    if (!Device.isDevice) {
+                        fetch("http://10.0.0.8:3000/loginUser", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify({ user })
                         })
-                        .catch(e => console.log(e))
+                            .then(response => response.json())
+                            .then(response => {
+                                let savedData = {
+                                    id: user.id,
+                                    email: user.email,
+                                    firstName: response.firstName,
+                                    lastName: response.lastName,
+                                    photoUrl: response.photoUrl
+                                }
+                                storeUserData(savedData);
+                            })
+                            .catch(e => console.log(e))
+                    }
+                    else {
+                        storeUserData(user);
+                    }
                 }
                 else console.log('Google signin was canceled');
             })
             .catch(error => console.log('error', error));
+    }
+
+    const storeUserData = (user) => {
+        AsyncStorage.setItem('Users', JSON.stringify({ user }))
+            .catch(error => console.log('error', error));
+        setUser(user);
     }
 
     const animateLoginPage = () => {
@@ -145,7 +154,7 @@ const LoadingScreen = () => {
             </Animated.View>
             <View style={[tw`bg-white absolute bottom-0  w-full z-0 justify-center items-center`, { height: 160, }]}>
                 <LoginButton onPress={handleGoogleSignin} color={['gray-300', 'black']} text={'Login with Google'} url={'https://www.freepnglogos.com/uploads/google-logo-png/google-logo-icon-png-transparent-background-osteopathy-16.png'} />
-                <LoginButton onPress={handleGoogleSignin} color={['blue-800', 'white']} text={'Login with Facebook'} url={'https://www.freepnglogos.com/uploads/aqua-blue-f-facebook-logo-png-22.png'} />
+                {/* <LoginButton onPress={handleGoogleSignin} color={['blue-800', 'white']} text={'Login with Facebook'} url={'https://www.freepnglogos.com/uploads/aqua-blue-f-facebook-logo-png-22.png'} /> */}
             </View>
         </View>
     )
