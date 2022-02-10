@@ -18,6 +18,7 @@ app.listen(3001, async () => {
 });
 
 app.get("/api/OrderVehicle", async (req, res) => {
+  console.log("order")
   const { userOrigin, userDestination, userID } = req.query;
   // find the nearest vehicle and assign it to the user
   const vehiclePlateNumber = await naiveAssignmentVehicleToUser(userOrigin, userDestination, userID)
@@ -48,7 +49,7 @@ const createCostMatrix = async () => {
   let mishtatfimMatrix = [];
   responseData.forEach((vehicle) => {
     origins.push(vehicle.currentLocation.location.lat + "," + vehicle.currentLocation.location.lng);
-    destinations.push(vehicle.routeToUser.end_location.lat + "," + vehicle.routeToUser.end_location.lng);
+    destinations.push(vehicle.route.end_location.lat + "," + vehicle.route.end_location.lng);
     vehiclesIDs.push(vehicle.plateNumber);
     usersIDs.push(count++);
   });
@@ -241,14 +242,14 @@ const naiveAssignmentVehicleToUser = async (userOrigin, userDestination, userID)
   // }
 
   // add to the desired vehicle the route to user destination from user origin
-  sortedNearestVehicles[0][1].routeToUser.routes[0].legs[0]['trip_type'] = 'to_user';
-  sortedNearestVehicles[0][1].routeToUser.routes[0].legs[0]['user_id'] = userID;
+  // sortedNearestVehicles[0][1].routeToUser.routes[0].legs[0]['trip_type'] = 'to_user';
+  sortedNearestVehicles[0][1].routeToUser['user_id'] = userID;
   await fetch("http://localhost:3000/pushRouteToVehicle", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ vehicle: sortedNearestVehicles[0][1].vehicle, routeToUser: sortedNearestVehicles[0][1].routeToUser })
+    body: JSON.stringify({ plateNumber: sortedNearestVehicles[0][1].vehicle.plateNumber, routeToUser: sortedNearestVehicles[0][1].routeToUser })
   });
   await fetch("http://localhost:3000/pushTripLocationsToUser", {
     method: "POST",

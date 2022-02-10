@@ -13,23 +13,23 @@ import { selectUserInfo, setUserInfo } from '../slices/userSlice';
 import LoginButton from '../components/LoginButton';
 import * as Google from 'expo-google-app-auth';
 import * as Device from 'expo-device';
-
-
-const firebaseConfig = {
-    apiKey: "AIzaSyAEDK9co1lmhgQ2yyb6C0iko4HE7sXaK38",
-    authDomain: "betteride.firebaseapp.com",
-    databaseURL: "https://betteride-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "betteride",
-    storageBucket: "betteride.appspot.com",
-    messagingSenderId: "826611003690",
-    appId: "1:826611003690:web:5f6c6634e3c51cf4a52e53",
-    measurementId: "G-SW32RTSRPW"
-};
-
-// Initialize Firebase
-initializeApp(firebaseConfig);
+import * as Notifications from 'expo-notifications';
+import { IP_ADDRESS } from '@env'
 
 const LoadingScreen = () => {
+    const firebaseConfig = {
+        apiKey: "AIzaSyAEDK9co1lmhgQ2yyb6C0iko4HE7sXaK38",
+        authDomain: "betteride.firebaseapp.com",
+        databaseURL: "https://betteride-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "betteride",
+        storageBucket: "betteride.appspot.com",
+        messagingSenderId: "826611003690",
+        appId: "1:826611003690:web:5f6c6634e3c51cf4a52e53",
+        measurementId: "G-SW32RTSRPW"
+    };
+    // Initialize Firebase
+    initializeApp(firebaseConfig);
+
     const dispatch = useDispatch();
     const navigation = useNavigation();
     const vehiclePlateNumber = useSelector(selectUserAssignedVehicle);
@@ -41,16 +41,29 @@ const LoadingScreen = () => {
     const opacity = yAnimation.interpolate({ inputRange: [0, 1], outputRange: [1, 0] })
     const borderRadius = yAnimation.interpolate({ inputRange: [0, 1], outputRange: [0, 30] })
 
+    // push notification
+    Notifications.setNotificationHandler({
+        handleNotification: async () => ({
+            shouldShowAlert: true,
+            shouldPlaySound: true,
+            shouldSetBadge: true,
+        }),
+    });
+
+    const [notification, setNotification] = useState(false);
+    const notificationListener = useRef();
+    const responseListener = useRef();
+    const [token, setToken] = useState(null);
 
     useEffect(() => {
-        //Update the state you want to be updated
-        const rerender = navigation.addListener('focus', () => {
+        registerForPushNotificationsAsync().then(token => {
+            setToken(token)
             AsyncStorage.getItem('Users')
                 .then(result => {
+                    console.log("results")
                     if (!result) {
                         console.log('There is no logged user...');
                         setTimeout(() => animateLoginPage(), 2000)
-                        // navigation.navigate('Login');
                     }
                     else {
                         console.log('There is already a logged user!');
@@ -60,23 +73,55 @@ const LoadingScreen = () => {
                 })
                 .catch(error => console.log('error', error))
         })
-        return rerender;
-    }, [navigation])
-    // const getUserAssignedVehicle = async () => {
-    //     let plateNumber = null;
-    //     await get(child(ref(getDatabase()), `users/1/trip/vehiclePlateNumber`)).then((snapshot) => {
-    //         plateNumber = snapshot.val();
-    //     })
-    //     dispatch(setUserAssignedVehicle(plateNumber));
-    // };
-    // getUserAssignedVehicle();
 
-    useEffect(() => {
-        if (user) {
-            dispatch(setUserInfo(user));
-            setTimeout(() => navigation.navigate('Map'), 1000)
+        // This listener is fired whenever a notification is received while the app is foregrounded
+        notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+            console.log("addNotificationReceivedListener")
+        });
+
+        // This listener is fired whenever a user taps on or interacts with a notification (works when app is foregrounded, backgrounded, or killed)
+        responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+            console.log("addNotificationResponseReceivedListener")
+        });
+
+        return () => {
+            Notifications.removeNotificationSubscription(notificationListener.current);
+            Notifications.removeNotificationSubscription(responseListener.current);
+        };
+    }, []);
+
+
+
+    const registerForPushNotificationsAsync = async () => {
+        let token;
+        if (Device.isDevice) {
+            const { status: existingStatus } = await Notifications.getPermissionsAsync();
+            let finalStatus = existingStatus;
+            if (existingStatus !== 'granted') {
+                const { status } = await Notifications.requestPermissionsAsync();
+                finalStatus = status;
+            }
+            if (finalStatus !== 'granted') {
+                alert('Failed to get push token for push notification!');
+                return;
+            }
+            token = (await Notifications.getExpoPushTokenAsync()).data;
+            // console.log(token);
+        } else {
+            // alert('Must use physical device for Push Notifications');
         }
-    }, [user]);
+
+        if (Platform.OS === 'android') {
+            Notifications.setNotificationChannelAsync('default', {
+                name: 'default',
+                importance: Notifications.AndroidImportance.MAX,
+                vibrationPattern: [0, 250, 250, 250],
+                lightColor: '#FF231F7C',
+            });
+        }
+        return token;
+    }
+
 
     const handleGoogleSignin = () => {
         const config = {
@@ -89,8 +134,10 @@ const LoadingScreen = () => {
             .then(result => {
                 const { type, user } = result;
                 if (type === 'success') {
-                    if (!Device.isDevice) {
-                        fetch("http://10.0.0.8:3000/loginUser", {
+                    // generate token before pushing information
+                    if (Device.isDevice) {
+                        user['token'] = token
+                        fetch(`http://${IP_ADDRESS}:3000/loginUser`, {
                             method: "POST",
                             headers: {
                                 "Content-Type": "application/json",
@@ -107,6 +154,7 @@ const LoadingScreen = () => {
                                     photoUrl: response.photoUrl
                                 }
                                 storeUserData(savedData);
+                                navigation.navigate('Map');
                             })
                             .catch(e => console.log(e))
                     }

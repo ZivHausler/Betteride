@@ -10,6 +10,7 @@ import { setTabShown } from '../slices/navSlice'
 import Intl from 'intl/lib/core'
 import { Platform } from 'react-native'
 import { IP_ADDRESS } from "@env";
+import { selectUserInfo } from '../slices/userSlice'
 
 
 const ConfirmOrder = () => {
@@ -20,6 +21,7 @@ const ConfirmOrder = () => {
   const origin = useSelector(selectOrigin)
   const destination = useSelector(selectDestination)
   const [isSearchingVehicle, setIsSearchingVehicle] = useState(false)
+  const userData = useSelector(selectUserInfo)
 
   const milesToKM = (string) => {
     if (!string) return;
@@ -31,9 +33,9 @@ const ConfirmOrder = () => {
     // then fetch the nearest vehicle
     // then do this VV
     // const baseUrl = Platform.OS === 'android' ? 'http://'+IP_ADDRESS : 'http://localhost';
-    const baseUrl = `http://10.0.0.8`;        //'http://'+IP_ADDRESS;
+    const baseUrl = `http://${IP_ADDRESS}`;        //'http://'+IP_ADDRESS;
     fetch(baseUrl + `:3001/api/OrderVehicle?userOrigin=${origin.description}
-    &userDestination=${destination.description}&userID=2`, {
+    &userDestination=${destination.description}&userID=${userData.id}`, {
       method: 'GET',
       headers: {
         Accept: 'application/json',

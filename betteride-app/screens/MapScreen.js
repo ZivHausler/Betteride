@@ -21,6 +21,10 @@ const MapScreen = () => {
   // const dbRef = useSelector(selectFirebaseRef);
   const [currentTab, setCurrentTab] = useState(<OrderRide />);
 
+  useEffect(()=>{
+
+  },[])
+
   useEffect(() => {
     switch (tabShown) {
       case 'order':
