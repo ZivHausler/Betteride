@@ -12,18 +12,18 @@ import { useNavigation } from "@react-navigation/native";
 import "react-native-gesture-handler";
 import Menu from "../components/Menu";
 import FulfilledOrder from "../tabs/FulfilledOrder";
+import VehicleArrived from "../tabs/VehicleArrived";
+import { selectUserInfo } from "../slices/userSlice";
 
 const MapScreen = () => {
   const dispatch = useDispatch();
   const Stack = createStackNavigator();
+  const user = useSelector(selectUserInfo);
   const tabShown = useSelector(selectTabShown);
   // const vehiclePlateNumber = useSelector(getUserAssignedVehicle);
   // const dbRef = useSelector(selectFirebaseRef);
-  const [currentTab, setCurrentTab] = useState(<OrderRide />);
+  const [currentTab, setCurrentTab] = useState();
 
-  useEffect(()=>{
-
-  },[])
 
   useEffect(() => {
     switch (tabShown) {
@@ -35,6 +35,9 @@ const MapScreen = () => {
         break;
       case 'fulfilled':
         setCurrentTab(<FulfilledOrder />);
+        break;
+      case 'vehicleArrived':
+        setCurrentTab(<VehicleArrived />);
         break;
       default: setCurrentTab(null);
         break;

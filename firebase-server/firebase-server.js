@@ -79,6 +79,12 @@ app.get("/getVehicles", async (req, res) => {
     res.send(snapshot.val());
   });
 });
+app.get("/getUserState", async (req, res) => {
+  db.ref("user").child(req.query.userID).child('trip').child('state').once("value", (snapshot) => {
+    console.log(snapshot.val());
+    res.send(snapshot.val());
+  });
+});
 app.get("/getVehiclesTowardsUsers", async (req, res) => {
   let tempVehiclesArray = [];
   db.ref("vehicles").once("value", (snapshot) => {

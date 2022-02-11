@@ -14,7 +14,8 @@ import LoginButton from '../components/LoginButton';
 import * as Google from 'expo-google-app-auth';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
-import { IP_ADDRESS } from '@env'
+import { IP_ADDRESS } from '@env';
+import { setTabShown } from '../slices/navSlice';
 
 const LoadingScreen = () => {
     const firebaseConfig = {
@@ -60,14 +61,18 @@ const LoadingScreen = () => {
             setToken(token)
             AsyncStorage.getItem('Users')
                 .then(result => {
-                    console.log("results")
                     if (!result) {
                         console.log('There is no logged user...');
                         setTimeout(() => animateLoginPage(), 2000)
                     }
                     else {
                         console.log('There is already a logged user!');
-                        dispatch(setUserInfo(JSON.parse(result).user));
+                        fetch(`http://${IP_ADDRESS}:3000/getUserState?userID=${JSON.parse(result).id}`)
+                            .then(response => response.json())
+                            .then(response => {
+                                if (response) user[state] = response;
+                                dispatch(setUserInfo(JSON.parse(result).user));
+                            });
                         setTimeout(() => navigation.navigate('Map'), 2000)
                     }
                 })
@@ -76,12 +81,13 @@ const LoadingScreen = () => {
 
         // This listener is fired whenever a notification is received while the app is foregrounded
         notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
-            console.log("addNotificationReceivedListener")
+            console.log(notification);
+            dispatch(setTabShown('vehicleArrived'));
         });
 
         // This listener is fired whenever a user taps on or interacts with a notification (works when app is foregrounded, backgrounded, or killed)
         responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
-            console.log("addNotificationResponseReceivedListener")
+            console.log(response);
         });
 
         return () => {
@@ -136,7 +142,7 @@ const LoadingScreen = () => {
                 if (type === 'success') {
                     // generate token before pushing information
                     if (Device.isDevice) {
-                        user['token'] = token
+                        user['token'] = token;
                         fetch(`http://${IP_ADDRESS}:3000/loginUser`, {
                             method: "POST",
                             headers: {
@@ -151,7 +157,7 @@ const LoadingScreen = () => {
                                     email: user.email,
                                     firstName: response.firstName,
                                     lastName: response.lastName,
-                                    photoUrl: response.photoUrl
+                                    photoUrl: response.photoUrl,
                                 }
                                 storeUserData(savedData);
                                 navigation.navigate('Map');
@@ -160,6 +166,7 @@ const LoadingScreen = () => {
                     }
                     else {
                         storeUserData(user);
+                        navigation.navigate('Map');
                     }
                 }
                 else console.log('Google signin was canceled');
@@ -167,8 +174,11 @@ const LoadingScreen = () => {
             .catch(error => console.log('error', error));
     }
 
-    const storeUserData = (user) => {
-        AsyncStorage.setItem('Users', JSON.stringify({ user }))
+    const storeUserData = async (user) => {
+        const userState = await fetch(`http://${IP_ADDRESS}:3000/getUserState?userID=${user.id}`);
+        const state = await userState.json();
+        if (state) user[state] = state;
+        AsyncStorage.setItem('Users', JSON.stringify(user))
             .catch(error => console.log('error', error));
         setUser(user);
     }
