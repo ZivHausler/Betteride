@@ -7,22 +7,30 @@ import { KeyboardAvoidingView, Platform } from "react-native";
 import tw from 'tailwind-react-native-classnames'
 import { CreditCardInput } from "react-native-credit-card-input";
 import { useNavigation } from "@react-navigation/native";
+import { useSelector,useDispatch } from 'react-redux';
+import { selectUserInfo, setUserInfo } from '../slices/userSlice';
+import {IP_ADDRESS} from "@env";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 const ProfileScreen = () => {
-    const tempUser = {
-        firstName: 'Tamir',
-        lastName: 'Ganem',
-        phoneNum: '054-4441114',
-        creditCard: { number: '** ** ** 4011', expiry: '03 / 25', cvc: '062' },
-        email: 'tamirg@gmail.com',
-    }
-    const [firstName, setFirstName] = useState('');
-    const [lastName, setLastName] = useState('');
-    const [email, setEmail] = useState('');
-    const [phoneNum, setPhoneNum] = useState('');
-    const [creditCard, setCreditCard] = useState('');
+    const userData = useSelector(selectUserInfo)
+    const [firstName, setFirstName] = useState(userData.firstName);
+    const [lastName, setLastName] = useState(userData.lastName);
+    const [email, setEmail] = useState(userData.email);
+    const [creditCard, setCreditCard] = useState({ number: '** ** ** 4011', expiry: '03 / 25', cvc: '062' });
     const navigation = useNavigation();
+    const dispatch = useDispatch();
 
+
+
+    // Object {
+    //     "email": "danielezraa@gmail.com",
+    //     "firstName": "Daniel",
+    //     "id": "106239502123201988788",
+    //     "lastName": "Ezra",
+    //     "photoUrl": "https://lh3.googleusercontent.com/a/AATXAJzu50b4W0ztsJh6RwNnoMfSPN6J0fix2Mkb1yt8r2c=s96-c",
+    //   }
     const data = [
         {
             id: 0,
@@ -41,16 +49,7 @@ const ProfileScreen = () => {
             setValue: setLastName
         },
         {
-
             id: 2,
-            label: 'Phone Number',
-            userField: 'phoneNum',
-            keyboardType: 'phone-pad',
-            value: phoneNum,
-            setValue: setPhoneNum
-        },
-        {
-            id: 3,
             label: 'Email',
             userField: 'email',
             keyboardType: 'email-address',
@@ -58,7 +57,7 @@ const ProfileScreen = () => {
             setValue: setEmail
         },
         {
-            id: 4,
+            id: 3,
             label: 'Credit Card',
             userField: 'creditCard',
             keyboardType: 'numeric',
@@ -67,10 +66,37 @@ const ProfileScreen = () => {
         }
 
     ]
-
+    const updateUserInfo = async () => {
+        const tempUser = {
+            id: userData.id,
+            firstName,
+            lastName,
+        }
+        await fetch(`http://${IP_ADDRESS}:3000/updateUserInfo`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({tempUser})
+        })
+        storeAndDispatchUserData({
+            id: userData.id,
+            firstName,
+            lastName,
+            email:userData.email,
+            photoUrl:userData.photoUrl,
+        })
+        console.log("f")
+        alert("Profile has been updated!")
+    }
     const cardInputChange = (form) => {
         return false;
     };
+    const storeAndDispatchUserData = (user) => {
+        dispatch(setUserInfo(user));
+        AsyncStorage.setItem('Users', JSON.stringify({ user }))
+            .catch(error => console.log('error', error));
+    }
 
     // // will print:
     // {
@@ -91,12 +117,12 @@ const ProfileScreen = () => {
     //     postalCode: "incomplete",
     //   },
     // };
-    
+
     return (
         <View style={tw`bg-white h-full w-full pt-2 pb-10`}>
             <TouchableOpacity style={tw`items-center`}>
                 <View style={tw`shadow w-40 h-40`}>
-                    <Image style={[tw`h-40 w-40 rounded-full shadow-xl`]} source={{ uri: 'https://i.imgur.com/bKApbFk.png' }} />
+                    <Image style={[tw`h-40 w-40 rounded-full shadow-xl`]} source={{ uri: userData.photoUrl }} />
                 </View>
             </TouchableOpacity>
             <FlatList style={tw`flex mt-4 h-2/3 `} data={data} keyExtractor={(item) => item.id}
@@ -113,7 +139,7 @@ const ProfileScreen = () => {
                                 <TextInput
                                     style={tw`bg-gray-100 p-2 w-full rounded-lg shadow`}
                                     onChangeText={setValue}
-                                    placeholder={userField === "creditCard" ? '*-*-**-' + tempUser[userField].substr(value.length - 4) : tempUser[userField]}
+                                    placeholder={userField === "creditCard" ? '*-*-**-' + value.substr(value.length - 4) : value}
                                     keyboardType={keyboardType}
                                     value={value}
                                 />
@@ -121,7 +147,7 @@ const ProfileScreen = () => {
                         </TouchableOpacity>
                 )} />
 
-            <TouchableOpacity style={tw`items-center justify-center pt-2 overflow-hidden`}>
+            <TouchableOpacity onPress={() => updateUserInfo()} style={tw`items-center justify-center pt-2 overflow-hidden`}>
                 <Text style={tw`bg-blue-200 rounded-full py-2 px-4`}>Apply Changes</Text>
             </TouchableOpacity>
         </View>

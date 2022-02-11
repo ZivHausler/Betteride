@@ -34,11 +34,7 @@ const link = 'Profile Screen'
 
 const MenuBar = ({ openCloseMenuBar }) => {
     const navigation = useNavigation()
-    const [user, setUser] = useState(useSelector(selectUserInfo));
-
-    useEffect(() => {
-    }, [user])
-
+    const user = useSelector(selectUserInfo);
     const redirectHandler = (link) => {
         if (link === 'Logout') {
             AsyncStorage.removeItem('Users')

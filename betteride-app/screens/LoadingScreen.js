@@ -136,7 +136,10 @@ const LoadingScreen = () => {
                 if (type === 'success') {
                     // generate token before pushing information
                     if (Device.isDevice) {
+                        console.log("TOKEN",token)
                         user['token'] = token
+                        // get higher photo quality
+                        user.photoUrl = user.photoUrl.replace('96','500')
                         fetch(`http://${IP_ADDRESS}:3000/loginUser`, {
                             method: "POST",
                             headers: {
@@ -153,7 +156,9 @@ const LoadingScreen = () => {
                                     lastName: response.lastName,
                                     photoUrl: response.photoUrl
                                 }
+                                console.log(savedData)
                                 storeUserData(savedData);
+                                dispatch(setUserInfo(savedData));
                                 navigation.navigate('Map');
                             })
                             .catch(e => console.log(e))

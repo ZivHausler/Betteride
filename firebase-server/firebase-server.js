@@ -37,9 +37,10 @@ app.post("/loginUser", jsonParser, async (req, res) => {
   db.ref("users").child(user.id).once("value", (snapshot) => {
     if (snapshot.val()) {
       // user exists!
-      // only pushing token
+      // updating token 
       db.ref("users").child(user.id).child('token').set(user.token)
-
+      // // updating profile picture
+      // db.ref('users').child(user.id).child('photoUrl').set(user.photoUrl);
       res.send(JSON.stringify(snapshot.val())).status(200);
     }
     else {
@@ -49,6 +50,19 @@ app.post("/loginUser", jsonParser, async (req, res) => {
       res.send(JSON.stringify(userObj)).status(200);
     }
   })
+});
+app.put("/updateUserInfo", jsonParser, async (req, res) => {
+  const { tempUser } = req.body;
+  try{
+    db.ref("users").child(tempUser.id).child('firstName').set(tempUser.firstName);
+    db.ref("users").child(tempUser.id).child('lastName').set(tempUser.lastName);
+    res.send("OK").status(200)
+  }
+  catch(e){
+    console.log("error",e)
+    res.send("UPDATE FAILED").status(400)
+  }
+  
 });
 
 app.post("/pushTripLocationsToUser", jsonParser, async (req, res) => {
