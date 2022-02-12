@@ -82,7 +82,7 @@ const LoadingScreen = () => {
                                     lastName: response.lastName,
                                     photoUrl: response.photoUrl
                                 }
-                                switch (response?.trip?.state.type) {
+                                switch (response?.trip?.state?.type) {
                                     case 'TOWARDS_VEHICLE':
                                         dispatch(setTabShown('arrived_to_user'));
                                         dispatch(setUserAssignedVehicle(response.trip.state.assigned));
@@ -94,11 +94,11 @@ const LoadingScreen = () => {
                                             .then(response => response.json())
                                             .then(vehicleResponse => {
                                                 dispatch(setRouteShown(response?.trip.state.type === 'vehicleToUser' ? 'vehicleToUser' : 'userToDestination'))
-                                                dispatch(setOrigin(response.trip.state.type === 'WAIT_TO_EXIT' ? vehicleResponse.destination : vehicleResponse.origin ));
+                                                dispatch(setOrigin(response.trip.state.type === 'WAIT_TO_EXIT' ? vehicleResponse.destination : vehicleResponse.origin));
                                                 dispatch(setDestination(vehicleResponse.destination));
                                             })
                                             .catch(error => console.log('error', error))
-                                        break
+                                        break;
                                     default:
                                         dispatch(setTabShown('order'));
                                         break;
@@ -200,9 +200,12 @@ const LoadingScreen = () => {
                                     lastName: response.lastName,
                                     photoUrl: response.photoUrl
                                 }
-                                if (response?.trip.state.type === 'TOWARDS_VEHICLE') dispatch(setTabShown('arrived_to_user'));
-                                else if (response?.trip.state.type === 'WAITING_FOR_VEHICLE') dispatch(setTabShown('null'));
-                                else dispatch(setTabShown('order'));
+                                try {
+                                    if (response?.trip?.state?.type === 'TOWARDS_VEHICLE') dispatch(setTabShown('arrived_to_user'));
+                                    else if (response?.trip?.state?.type === 'WAITING_FOR_VEHICLE') dispatch(setTabShown('null'));
+                                    else dispatch(setTabShown('order'));
+                                }
+                                catch (e) {console.log(e)}
                                 storeUserData(savedData);
                                 dispatch(setUserInfo(savedData));
                                 navigation.navigate('Map');
