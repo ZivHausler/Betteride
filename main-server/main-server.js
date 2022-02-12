@@ -10,6 +10,7 @@ const { dir } = require("console");
 const googleMapsKey = "AIzaSyB9mAs9XA7wtN9RdKMKRig7wlHBfUtjt1g";
 const distance = require("google-distance-matrix");
 const munkres = require("munkres-js");
+const IP_ADDRESS = "10.100.102.233";
 
 app.use(cors({ origin: true }));
 
@@ -23,7 +24,6 @@ app.get('/api/getUserDirections', async (req, res) => {
 });
 
 app.get("/api/OrderVehicle", async (req, res) => {
-  console.log("order")
   const { userOrigin, userDestination, userID } = req.query;
   // find the nearest vehicle and assign it to the user
   const vehiclePlateNumber = await naiveAssignmentVehicleToUser(userOrigin, userDestination, userID)
@@ -36,6 +36,49 @@ app.get("/api/OrderVehicle", async (req, res) => {
     // and create a costMatrix out of it
     await createCostMatrix();
     res.status(200).send(JSON.stringify(vehiclePlateNumber));
+  }
+});
+
+app.put('/api/generateRouteToVehicle', async (req, res) => {
+  const { userID } = req.query;
+  try {
+    // get the desired user origin and destination (from the firebase server)
+    const userDirections = await fetch(`http://${IP_ADDRESS}:3000/getUserDirections?userID=${userID}`)
+    const origin_destination = await userDirections.json();
+    // getting the route from the main server
+    const route = await getDirectionsByAddress( origin_destination.userOrigin,origin_destination.userDestination)
+    route['user_id'] = userID;
+    // push to the vehicle via firebase server
+    await fetch(`http://${IP_ADDRESS}:3000/pushRouteToVehicle`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ plateNumber: origin_destination.state.assigned, route,type:'WITH_USER' })
+    });
+    await fetch(`http://${IP_ADDRESS}:3000/updateUserVehicleState`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ plateNumber: origin_destination.state.assigned, userID, state: "TOGETHER" })
+    });
+    console.log(route)
+    res.status(200).send(JSON.stringify({
+      origin: {
+        description: route.start_address,
+        location: route.start_location
+      },
+      destination: {
+        description: route.end_address,
+        location: route.end_location
+      },
+    }));
+  }
+
+  catch (e) {
+    console.log(e)
+    res.status(400).send("ERROR")
   }
 });
 
@@ -143,7 +186,6 @@ const getDirectionsByAddress = async (from, to) => {
       `https://maps.googleapis.com/maps/api/directions/json?origin=${from}&destination=${to}&key=${googleMapsKey}`
     )
     .then((response) => {
-      console.log(response.data.routes[0].legs[0]);
       return response.data.routes[0].legs[0];
     })
     .catch((error) => console.log(error));
@@ -168,10 +210,9 @@ const replaceDistWithETA = async (dict, callLocation) => {
       `http://localhost:3000/api/getRoute?fromLat=${value.currentLocation.location.lat}&fromLng=${value.currentLocation.location.lng}&toLat=${callLocation.lat}&toLng=${callLocation.lng}`
     );
     const responseData = await response.json();
-    console.log(responseData)
     newDict[responseData.routes[0].legs[0].duration.value / 60] = {
       vehicle: value,
-      routeToUser: responseData,
+      routeToUser: responseData.routes[0].legs[0],
     };
   }
   return newDict;
@@ -215,7 +256,7 @@ const replaceMaxKey = (dict, value, newKey) => {
 // the method recives user origin and destination, calc its route and returns the assigned vehicle
 const naiveAssignmentVehicleToUser = async (userOrigin, userDestination, userID) => {
   const userRoute = await getDirectionsByAddress(userOrigin, userDestination);
-  const userOriginCoordinates = userRoute.routes[0].legs[0].start_location;
+  const userOriginCoordinates = userRoute.start_location;
   const vehiclesResponse = await fetch(`http://localhost:3000/getVehicles`);
   const vehicles = await vehiclesResponse.json();
   let nearestVehicles = {};
@@ -258,7 +299,7 @@ const naiveAssignmentVehicleToUser = async (userOrigin, userDestination, userID)
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ plateNumber: sortedNearestVehicles[0][1].vehicle.plateNumber, routeToUser: sortedNearestVehicles[0][1].routeToUser })
+    body: JSON.stringify({ plateNumber: sortedNearestVehicles[0][1].vehicle.plateNumber, route: sortedNearestVehicles[0][1].routeToUser,type:"TOWARDS_USER"})
   });
   await fetch("http://localhost:3000/pushTripLocationsToUser", {
     method: "POST",

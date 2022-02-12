@@ -82,25 +82,27 @@ const LoadingScreen = () => {
                                     lastName: response.lastName,
                                     photoUrl: response.photoUrl
                                 }
-                                if (response?.trip?.state === 'TOWARDS_VEHICLE') {
-                                    dispatch(setTabShown('arrived_to_user'));
-                                    dispatch(setUserAssignedVehicle(response.trip.vehiclePlateNumber));
+                                switch (response?.trip?.state.type) {
+                                    case 'TOWARDS_VEHICLE':
+                                        dispatch(setTabShown('arrived_to_user'));
+                                        dispatch(setUserAssignedVehicle(response.trip.state.assigned));
+                                        break;
+                                    case 'WAITING_FOR_VEHICLE': case 'TOWRADS_DESTINATION':
+                                        dispatch(setTabShown('null'));
+                                        dispatch(setUserAssignedVehicle(response.trip.vehiclePlateNumber));
+                                        fetch(`http://${IP_ADDRESS}:3000/getVehicleCurrentRoute?plateNumber=${response.trip.vehiclePlateNumber}`)
+                                            .then(response => response.json())
+                                            .then(response => {
+                                                dispatch(setRouteShown(response?.trip?.state.type === 'vehicleToUser' ? 'vehicleToUser' : 'userToDestination'))
+                                                dispatch(setOrigin(response.origin));
+                                                dispatch(setDestination(response.destination));
+                                            })
+                                            .catch(error => console.log('error', error))
+                                        break
+                                    default:
+                                        dispatch(setTabShown('order'));
+                                        break;
                                 }
-                                else if (response?.trip?.state === 'WAITING_FOR_VEHICLE') {
-                                    dispatch(setTabShown('null'));
-                                    dispatch(setUserAssignedVehicle(response.trip.vehiclePlateNumber));
-                                    fetch(`http://${IP_ADDRESS}:3000/getVehicleCurrentRoute?plateNumber=${response.trip.vehiclePlateNumber}`)
-                                        .then(response => response.json())
-                                        .then(response => {
-                                            dispatch(setRouteShown('vehicleToUser'))
-                                            dispatch(setOrigin(response.origin));
-                                            dispatch(setDestination(response.destination));
-                                        })
-                                        .catch(error => console.log('error', error))
-                                }
-                                else dispatch(setTabShown('order'));
-
-
                                 dispatch(setUserInfo(savedData));
                             })
                             .catch(e => console.log(e))
@@ -112,11 +114,13 @@ const LoadingScreen = () => {
 
         // This listener is fired whenever a notification is received while the app is foregrounded
         notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+            console.log(notification.request.content.data.type)
             dispatch(setTabShown('arrived_to_user'));
         });
 
         // This listener is fired whenever a user taps on or interacts with a notification (works when app is foregrounded, backgrounded, or killed)
-        responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+        responseListener.current = Notifications.addNotificationResponseReceivedListener(notification => {
+            console.log(notification.request.content.data.type)
             dispatch(setTabShown('arrived_to_user'));
         });
 
@@ -189,8 +193,8 @@ const LoadingScreen = () => {
                                     lastName: response.lastName,
                                     photoUrl: response.photoUrl
                                 }
-                                if (response?.trip.state === 'TOWARDS_VEHICLE') dispatch(setTabShown('arrived_to_user'));
-                                else if (response?.trip.state === 'WAITING_FOR_VEHICLE') dispatch(setTabShown('null'));
+                                if (response?.trip.state.type === 'TOWARDS_VEHICLE') dispatch(setTabShown('arrived_to_user'));
+                                else if (response?.trip.state.type === 'WAITING_FOR_VEHICLE') dispatch(setTabShown('null'));
                                 else dispatch(setTabShown('order'));
                                 storeUserData(savedData);
                                 dispatch(setUserInfo(savedData));

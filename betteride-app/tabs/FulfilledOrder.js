@@ -38,7 +38,7 @@ const FulfilledOrder = () => {
             }).start(() => {
                 dispatch(setTabShown(null))
             });
-        }, 7500)
+        }, 4000)
     }, [])
 
     return (

@@ -23,34 +23,15 @@ const ArrivedToUser = () => {
     const userData = useSelector(selectUserInfo);
 
     const startRide = async () => {
-        // dispatch(setTabShown('null'));
-
-        const userDirections = await fetch(`http://${IP_ADDRESS}:3000/getUserDirections?userID=${userData.id}`)
-        const origin_destination = await userDirections.json();
-        fetch(`http://${IP_ADDRESS}:3001/api/getUserDirections?origin=${origin_destination.userOrigin}
-        &destination=${origin_destination.userDestination}`, {
-            method: 'GET',
-            headers: {
-                Accept: 'application/json',
-                'Content-Type': 'application/json'
-            },
+        let response = await fetch(`http://${IP_ADDRESS}:3001/api/generateRouteToVehicle?userID=${userData.id}`, {
+            method: "PUT",
         })
-            .then(response => response.json())
-            .then(response => {
-                alert(JSON.stringify(response));
-                // dispatch(setUserAssignedVehicle(response));
-                // // create listener to the specific vehicle plate number
-                // // dispatch(setOrigin(null));
-                // dispatch(setDestination(null));
-                // dispatch(setRouteShown('vehicleToUser'));;
-                // dispatch(setTabShown('fulfilled'));
-            })
-            .catch(e => {
-                console.log(e)
-            })
-            .finally(() => {
-                setIsSearchingVehicle(false)
-            })
+        response = await response.json();
+        console.log(response);
+        dispatch(setTabShown(null))
+        dispatch(setOrigin(response.origin))
+        dispatch(setDestination(response.destination))
+        dispatch(setRouteShown('userToDestination'))
     }
 
     return (

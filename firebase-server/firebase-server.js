@@ -24,9 +24,9 @@ app.listen(3000, async () => {
 
 // POST CALLS
 app.post("/pushRouteToVehicle", jsonParser, async (req, res) => {
-  const { plateNumber, routeToUser } = req.body;
-  db.ref("vehicles").child(plateNumber).child("route").set(routeToUser.routes[0].legs[0]);
-  db.ref("vehicles").child(plateNumber).child("state").set({ type: "TOWARDS_USER", assigned: routeToUser.user_id });
+  const { plateNumber, route, type } = req.body;
+  db.ref("vehicles").child(plateNumber).child("route").set(route);
+  db.ref("vehicles").child(plateNumber).child("state").set({ type, assigned: route.user_id });
   res.sendStatus(200);
 });
 app.post("/loginUser", jsonParser, async (req, res) => {
@@ -49,6 +49,22 @@ app.post("/loginUser", jsonParser, async (req, res) => {
     }
   })
 });
+
+app.put("/updateUserVehicleState", jsonParser, async (req, res) => {
+  const { plateNumber, userID, state } = req.body;
+  try {
+    if (state === "TOGETHER") {
+      db.ref("vehicle").child(plateNumber).child("state").child("type").set("WITH_USER");
+      db.ref("users").child(userID).child('trip').child("state").child("type").set('TOWARDS_DESTINATION');
+    }
+    res.send("OK").status(200)
+  }
+  catch (e) {
+    console.log("error", e)
+    res.send("UPDATE FAILED").status(400)
+  }
+});
+
 app.put("/updateUserInfo", jsonParser, async (req, res) => {
   const { tempUser } = req.body;
   try {
@@ -64,7 +80,7 @@ app.put("/updateUserInfo", jsonParser, async (req, res) => {
 
 app.post("/pushTripLocationsToUser", jsonParser, async (req, res) => {
   const { userID, userOrigin, userDestination, vehiclePlateNumber } = req.body;
-  db.ref("users").child(userID).child("trip").set({ userOrigin, userDestination, vehiclePlateNumber, state: "WAITING_FOR_VEHICLE" });
+  db.ref("users").child(userID).child("trip").set({ userOrigin, userDestination, state: { type: "WAITING_FOR_VEHICLE", assigned: vehiclePlateNumber } });
   res.sendStatus(200);
 });
 
@@ -108,6 +124,7 @@ app.get("/api/getRoute", async (req, res) => {
   let { fromLat, fromLng, toLat, toLng } = req.query;
   // let results = await getDirections({ lat: fromLat, lng: fromLng }, { lat: toLat, lng: toLng });
   // res.status(200).send(results);
+
   getDirections({ lat: fromLat, lng: fromLng }, { lat: toLat, lng: toLng })
     .then((response) => res.status(200).send(response.data))
     .catch((err) => console.log(err));
@@ -127,6 +144,8 @@ app.get('/getVehicleCurrentRoute', async (req, res) => {
     res.status(200).send(JSON.stringify(object));
   });
 })
+
+
 app.get("/getTotalDrivingTimeToUser", async (req, res) => {
   let sum = 0;
   db.ref("vehicles").once("value", (snapshot) => {
@@ -193,26 +212,35 @@ const demoVehicle = async (vehicle) => {
     // now we need to update his address and location to the trip end point
     vehicleRef.child(vehicle.plateNumber).child('currentLocation').set({ address: vehicle.route.end_address, location: { lat: vehicle.route.end_location.lat, lng: vehicle.route.end_location.lng } });
 
-    await sendMessageToUser(vehicle.plateNumber, vehicle.state.assigned);
+    await sendMessageToUser(vehicle.plateNumber, vehicle.state.assigned, vehicle.state.type);
 
     if (vehicle.state.type === 'TOWARDS_USER') {
-      usersRef.child(vehicle.state.assigned).child('trip').child('state').set('TOWARDS_VEHICLE');
+      console.log("STATE = TOWRARDS_VEHICLE")
+      usersRef.child(vehicle.state.assigned).child('trip').child('state').child("type").set('TOWARDS_VEHICLE');
       vehicleRef.child(vehicle.plateNumber).child('route').set(null);
       vehicleRef.child(vehicle.plateNumber).child('state').child('type').set('WAITING_FOR_USER');
+    }
+    else if (vehicle.state.type === 'WITH_USER') {
+      // implement data saving to history
+      // reseting the states
+      usersRef.child(vehicle.state.assigned).child('trip').set(null);
+      vehicleRef.child(vehicle.plateNumber).child('route').set(null);
+      vehicleRef.child(vehicle.plateNumber).child('state').set(null)
     }
   }
 }
 
-const sendMessageToUser = async (plateNumber, userID) => {
+const sendMessageToUser = async (plateNumber, userID, type) => {
   // create the message to send to the user that the vehicle has arrived and will be waiting for him.
   let message;
+  
   usersRef.child(userID).once('value', userSnapshot => {
     message = {
       to: userSnapshot.val().token,
       sound: 'default',
-      title: `${userSnapshot.val().firstName}, Your vehicle has arrived`,
-      body: `It's plate number is ${plateNumber}`,
-      data: { someData: 'goes here' },
+      title: type === 'TOWARDS_USER' ? `${userSnapshot.val().firstName}, Your vehicle has arrived` : `${userSnapshot.val().firstName}, You have arrived to your destination!`,
+      body: type === 'TOWARDS_USER' ? `It's plate number is ${plateNumber}` : `Please step out from the vehicle`,
+      data: { type },
     }
     sendPushNotification(message)
   })
