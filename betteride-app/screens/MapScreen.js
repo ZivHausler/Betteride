@@ -6,14 +6,14 @@ import tw from "tailwind-react-native-classnames";
 import Map from "../components/Map";
 import { createStackNavigator } from "@react-navigation/stack";
 import { useDispatch, useSelector } from "react-redux";
-import OrderRide from "../tabs/OrderRide";
-import ConfirmOrder from "../tabs/ConfirmOrder";
 import { useNavigation } from "@react-navigation/native";
 import "react-native-gesture-handler";
 import Menu from "../components/Menu";
-import FulfilledOrder from "../tabs/FulfilledOrder";
-import ArrivedToUser from "../tabs/ArrivedToUser";
-import ArrivedToDestination from "../tabs/ArrivedToDestination";
+// import OrderRide from "../tabs/OrderRide";
+// import ConfirmOrder from "../tabs/ConfirmOrder";
+// import FulfilledOrder from "../tabs/FulfilledOrder";
+// import ArrivedToUser from "../tabs/ArrivedToUser";
+// import ArrivedToDestination from "../tabs/ArrivedToDestination";
 import ToUserBottomSheet from '../tabs/ToUserBottomSheet'
 
 const MapScreen = () => {
@@ -24,36 +24,36 @@ const MapScreen = () => {
   // const dbRef = useSelector(selectFirebaseRef);
   const [currentTab, setCurrentTab] = useState(null);
 
-  useEffect(() => {
-    switch (tabShown) {
-      case 'order':
-        dispatch(setOrigin(null));
-        dispatch(setDestination(null));
-        // setCurrentTab(<OrderRide />);
-        setCurrentTab(<ToUserBottomSheet/>);
-        break;
-      case 'confirm':
-        setCurrentTab(<ConfirmOrder />);
-        break;
-      case 'fulfilled':
-        setCurrentTab(<FulfilledOrder />);
-        break;
-      case 'arrived_to_user':
-        setCurrentTab(<ArrivedToUser />);
-        break;
-      case 'arrived_to_destination':
-        setCurrentTab(<ArrivedToDestination />);
-        break;
-      default: setCurrentTab(null);
-        break;
-    }
-  }, [tabShown])
+  // useEffect(() => {
+  //   switch (tabShown) {
+  //     case 'order':
+  //       dispatch(setOrigin(null));
+  //       dispatch(setDestination(null));
+  //       // setCurrentTab(<OrderRide />);
+  //       setCurrentTab(<ToUserBottomSheet index={4}/>);
+  //       break;
+  //     case 'confirm':
+  //       setCurrentTab(<ConfirmOrder />);
+  //       break;
+  //     case 'fulfilled':
+  //       setCurrentTab(<FulfilledOrder />);
+  //       break;
+  //     case 'arrived_to_user':
+  //       setCurrentTab(<ArrivedToUser />);
+  //       break;
+  //     case 'arrived_to_destination':
+  //       setCurrentTab(<ArrivedToDestination />);
+  //       break;
+  //     default: setCurrentTab(null);
+  //       break;
+  //   }
+  // }, [tabShown])
 
   return (
     <View style={[tw`relative`]}>
       <Menu />
       <Map />
-      {currentTab}
+      <ToUserBottomSheet cardShown={0} />
     </View>
   );
 };

@@ -16,34 +16,34 @@ const FulfilledOrder = () => {
     const [selected, setSelected] = useState(null);
     const travelTimeInformation = useSelector(selectTravelTimeInformation);
 
-    // animation vars
-    const fadeAnim = useRef(new Animated.Value(1)).current;
-    // animation function
-    const fadeOut = () => {
-        Animated.timing(fadeAnim, {
-            toValue: 0,
-            duration: 300,
-            useNativeDriver: true,
-        }).start(() => {
-            dispatch(setTabShown(null))
-        });
-    };
+    // // animation vars
+    // const fadeAnim = useRef(new Animated.Value(1)).current;
+    // // animation function
+    // const fadeOut = () => {
+    //     Animated.timing(fadeAnim, {
+    //         toValue: 0,
+    //         duration: 300,
+    //         useNativeDriver: true,
+    //     }).start(() => {
+    //         dispatch(setTabShown(null))
+    //     });
+    // };
 
-    useEffect(() => {
-        setTimeout(() => {
-            Animated.timing(fadeAnim, {
-                toValue: 0,
-                duration: 300,
-                useNativeDriver: true,
-            }).start(() => {
-                dispatch(setTabShown(null))
-            });
-        }, 4000)
-    }, [])
+    // useEffect(() => {
+    //     setTimeout(() => {
+    //         Animated.timing(fadeAnim, {
+    //             toValue: 0,
+    //             duration: 300,
+    //             useNativeDriver: true,
+    //         }).start(() => {
+    //             dispatch(setTabShown(null))
+    //         });
+    //     }, 4000)
+    // }, [])
 
     return (
-        <Animated.View style={[styles.orderContainer, { opacity: fadeAnim }, tw`shadow-lg`]} >
-            <TouchableOpacity style={tw` px-1 justify-around items-center `} onPress={fadeOut} activeOpacity={1}>
+        <Animated.View style={[styles.orderContainer, {  }, tw`shadow-lg`]} >
+            <TouchableOpacity style={tw` px-1 justify-around items-center `} activeOpacity={1}>
                 <Text style={tw`text-blue-400 font-bold text-xl my-1`}>Booking successful</Text>
                 <View style={tw`justify-center items-center my-1`}>
                     <Text style={tw`text-center`}>Your booking has been confirmed!</Text>

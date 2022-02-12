@@ -59,7 +59,7 @@ const OrderRide = () => {
     }, [origin, destination])
 
     return (
-        <View style={[styles.orderContainer, tw`bg-white shadow-lg`, {}]}>
+        <View style={[styles.orderContainer, tw`bg-white shadow-lg`, { width: '100%' }]}>
             <View style={[styles.orderBox, tw`shadow-lg`]}>
                 <DotsAndLines amountOfLines={13} />
                 <View style={tw`w-5/6 flex flex-col justify-between`}>
@@ -80,7 +80,6 @@ export default OrderRide
 
 const styles = StyleSheet.create({
     orderContainer: {
-        position: 'absolute',
         bottom: Platform.OS === "ios" ? 30 : 20,
         left: 0,
         padding: 10,
