@@ -3,20 +3,27 @@ import { Image, StyleSheet, Text, View, ActivityIndicator, Animated, Button, Eas
 import tw from 'tailwind-react-native-classnames'
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
-// import { getDatabase, child, ref, get } from 'firebase/database';
 import { initializeApp } from 'firebase/app';
 import { selectUserAssignedVehicle, setDestination, setOrigin, setRouteShown, setTabShown, setUserAssignedVehicle } from '../slices/navSlice';
 import { useDispatch, useSelector } from 'react-redux';
 import AppLoading from 'expo-app-loading';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { selectUserInfo, setUserInfo } from '../slices/userSlice';
+import { selectUserInfo, setUserInfo,setUserLocation } from '../slices/userSlice';
 import LoginButton from '../components/LoginButton';
 import * as Google from 'expo-google-app-auth';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { IP_ADDRESS } from '@env'
+import * as Location from 'expo-location';
 
-const LoadingScreen = () => {
+
+const LoadingScreen = ({ navigation, route }) => {
+
+    useEffect(() => {
+        if (route.params)
+            setTimeout(() => animateLoginPage(), 500)
+    }, [route.params])
+
     const firebaseConfig = {
         apiKey: "AIzaSyAEDK9co1lmhgQ2yyb6C0iko4HE7sXaK38",
         authDomain: "betteride.firebaseapp.com",
@@ -31,7 +38,6 @@ const LoadingScreen = () => {
     initializeApp(firebaseConfig);
 
     const dispatch = useDispatch();
-    const navigation = useNavigation();
     const vehiclePlateNumber = useSelector(selectUserAssignedVehicle);
     // const user = useSelector(selectUserInfo);
     const [user, setUser] = useState(null);
@@ -40,6 +46,7 @@ const LoadingScreen = () => {
     const translateLogo = yAnimation.interpolate({ inputRange: [0, 1], outputRange: [0, 75] })
     const opacity = yAnimation.interpolate({ inputRange: [0, 1], outputRange: [1, 0] })
     const borderRadius = yAnimation.interpolate({ inputRange: [0, 1], outputRange: [0, 30] })
+    const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
     // push notification
     Notifications.setNotificationHandler({
@@ -169,6 +176,7 @@ const LoadingScreen = () => {
 
 
     const handleGoogleSignin = () => {
+        setIsGoogleLoading(true);
         const config = {
             iosClientId: `826611003690-t8vsfq83kh3m7s7komjrcj9trb5nn0nr.apps.googleusercontent.com`,
             androidClientId: `826611003690-drnln24p7oc78s2s7dk1me9a84uasg0q.apps.googleusercontent.com`,
@@ -205,7 +213,7 @@ const LoadingScreen = () => {
                                     else if (response?.trip?.state?.type === 'WAITING_FOR_VEHICLE') dispatch(setTabShown('null'));
                                     else dispatch(setTabShown('order'));
                                 }
-                                catch (e) {console.log(e)}
+                                catch (e) { console.log(e) }
                                 storeUserData(savedData);
                                 dispatch(setUserInfo(savedData));
                                 navigation.navigate('Map');
@@ -219,8 +227,20 @@ const LoadingScreen = () => {
                 }
                 else console.log('Google signin was canceled');
             })
-            .catch(error => console.log('error', error));
+            .catch(error => console.log('error', error))
+            .finally(() => { setTimeout(() => setIsGoogleLoading(false), 500) });
     }
+    useEffect(() => {
+        (async () => {
+          let { status } = await Location.requestForegroundPermissionsAsync();
+          if (status !== 'granted') {
+            setErrorMsg('Permission to access location was denied');
+            return;
+          }
+          let location = await Location.getCurrentPositionAsync({});
+          dispatch(setUserLocation(location));
+        })();
+      }, []);
 
     const storeUserData = (user) => {
         AsyncStorage.setItem('Users', JSON.stringify({ user }))
@@ -255,8 +275,7 @@ const LoadingScreen = () => {
                 <Animated.Image style={[styles.carIcon, { transform: [{ translateY: translateLogo }] }]} source={{ uri: 'https://www.unlimitedtuning.nl/media/catalog/product/t/e/teslaaaa_5.png' }} />
             </Animated.View>
             <View style={[tw`bg-white absolute bottom-0  w-full z-0 justify-center items-center`, { height: 160, }]}>
-                <LoginButton onPress={handleGoogleSignin} color={['gray-300', 'black']} text={'Login with Google'} url={'https://www.freepnglogos.com/uploads/google-logo-png/google-logo-icon-png-transparent-background-osteopathy-16.png'} />
-                {/* <LoginButton onPress={handleGoogleSignin} color={['blue-800', 'white']} text={'Login with Facebook'} url={'https://www.freepnglogos.com/uploads/aqua-blue-f-facebook-logo-png-22.png'} /> */}
+                <LoginButton isGoogleLoading={isGoogleLoading} onPress={handleGoogleSignin} color={['gray-300', 'black']} text={'Login with Google'} url={'https://www.freepnglogos.com/uploads/google-logo-png/google-logo-icon-png-transparent-background-osteopathy-16.png'} />
             </View>
         </View>
     )

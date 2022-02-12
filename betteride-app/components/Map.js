@@ -9,23 +9,35 @@ import { useDispatch } from 'react-redux';
 import RenderRoute from "./RenderRoute";
 import VehicleMarkers from "./VehicleMarkers";
 import { getDatabase, child, ref, get, onValue } from 'firebase/database';
+import { selectUserLocation } from "../slices/userSlice";
 
 const Map = () => {
-  const currentLocation = useSelector(selectCurrentLocation);
   const origin = useSelector(selectOrigin);
   const destination = useSelector(selectDestination);
+  const userLocation = useSelector(selectUserLocation);
   const routeShown = useSelector(selectRouteShown);
   const userAssignedVehicle = useSelector(selectUserAssignedVehicle);
   const [vehicleLocation, setVehicleLocation] = useState(null);
   const mapRef = useRef(null);
   const dispatch = useDispatch();
-  const atlit = { location: { lat: 32.690918, lng: 34.942981 }, description: 'Atlit, Israel' }
   const [showLocation, setShowLocation] = useState({
-    latitude: atlit.location.lat,
-    longitude: atlit.location.lng,
+    latitude: 32.690918, // atlit lat
+    longitude: 34.942981, // atlit lng
     latitudeDelta: 0.5,
     longitudeDelta: 0.5,
   });
+
+  useEffect(() => {
+    if (userLocation){
+        setShowLocation({
+          latitude: userLocation.coords.latitude, 
+          longitude: userLocation.coords.longitude,
+          latitudeDelta: 0.5,
+          longitudeDelta: 0.5,
+        })
+    }
+  }, [userLocation])
+
 
   useEffect(() => {
     if (!userAssignedVehicle) return;

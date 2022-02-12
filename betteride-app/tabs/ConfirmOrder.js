@@ -1,13 +1,13 @@
 import { useNavigation } from '@react-navigation/native'
 import React, { useState } from 'react'
 import { FlatList, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native'
+import AntDesign from 'react-native-vector-icons/AntDesign'
 import { Icon } from 'react-native-elements'
 import { useSelector } from 'react-redux'
 import tw from 'tailwind-react-native-classnames'
 import { selectDestination, selectOrigin, selectTravelTimeInformation, setDestination, setOrigin, setRouteShown, setUserAssignedVehicle } from '../slices/navSlice'
 import { useDispatch } from "react-redux";
 import { setTabShown } from '../slices/navSlice'
-import Intl from 'intl/lib/core'
 import { Platform } from 'react-native'
 import { IP_ADDRESS } from "@env";
 import { selectUserInfo } from '../slices/userSlice'
@@ -63,6 +63,11 @@ const ConfirmOrder = () => {
 
   return (
     <SafeAreaView style={[styles.orderContainer, tw`justify-between shadow-lg`]}>
+      <View>
+      <AntDesign name='left' size={28}
+                style={{  position: 'absolute', top: 14, left: 7, zIndex: 2 }}
+                color={'#333'} onPress={() => dispatch(setTabShown('order'))} />
+      </View>
       <View style={tw`p-3`}>
         <Text style={tw`text-xl font-bold text-center`}>Confirm your ride</Text>
         <Image style={styles.testImage} source={{ uri: 'https://i.ibb.co/vjxRvQK/Tesla-Electric-Car-PNG-Free-Download.png' }} />

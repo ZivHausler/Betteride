@@ -38,7 +38,7 @@ const MenuBar = ({ openCloseMenuBar }) => {
     const redirectHandler = (link) => {
         if (link === 'Logout') {
             AsyncStorage.removeItem('Users')
-                .then(res => navigation.navigate('Loading'))
+                .then(res => navigation.navigate('Loading',true))
                 .catch(error => console.log(`Couldn't remove user`));
         }
         else navigation.navigate(link)

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { getUserAssignedVehicle, selectFirebaseRef, selectUserAssignedVehicle, setTabShown } from '../slices/navSlice'
+import { getUserAssignedVehicle, selectFirebaseRef, selectUserAssignedVehicle, setDestination, setOrigin, setRouteShown, setTabShown } from '../slices/navSlice'
 import { selectTabShown } from '../slices/navSlice';
 import tw from "tailwind-react-native-classnames";
 import Map from "../components/Map";
@@ -14,6 +14,7 @@ import Menu from "../components/Menu";
 import FulfilledOrder from "../tabs/FulfilledOrder";
 import ArrivedToUser from "../tabs/ArrivedToUser";
 import ArrivedToDestination from "../tabs/ArrivedToDestination";
+import ToUserBottomSheet from '../tabs/ToUserBottomSheet'
 
 const MapScreen = () => {
   const dispatch = useDispatch();
@@ -26,7 +27,10 @@ const MapScreen = () => {
   useEffect(() => {
     switch (tabShown) {
       case 'order':
-        setCurrentTab(<OrderRide />);
+        dispatch(setOrigin(null));
+        dispatch(setDestination(null));
+        // setCurrentTab(<OrderRide />);
+        setCurrentTab(<ToUserBottomSheet/>);
         break;
       case 'confirm':
         setCurrentTab(<ConfirmOrder />);
