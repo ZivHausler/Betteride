@@ -16,7 +16,6 @@ admin.initializeApp({
 });
 
 const db = admin.database();
-
 app.use(cors({ origin: true }));
 
 app.listen(3000, async () => {
@@ -27,17 +26,16 @@ app.listen(3000, async () => {
 app.post("/pushRouteToVehicle", jsonParser, async (req, res) => {
   const { plateNumber, routeToUser } = req.body;
   db.ref("vehicles").child(plateNumber).child("route").set(routeToUser.routes[0].legs[0]);
-  db.ref("vehicles").child(plateNumber).child("state").set({type:"TOWARDS_USER",assigned:routeToUser.user_id});
+  db.ref("vehicles").child(plateNumber).child("state").set({ type: "TOWARDS_USER", assigned: routeToUser.user_id });
   res.sendStatus(200);
 });
-
 app.post("/loginUser", jsonParser, async (req, res) => {
   const { user } = req.body;
-  console.log(user);
   db.ref("users").child(user.id).once("value", (snapshot) => {
     if (snapshot.val()) {
       // user exists!
       // updating token 
+      if (!user.token) return;
       db.ref("users").child(user.id).child('token').set(user.token)
       // // updating profile picture
       // db.ref('users').child(user.id).child('photoUrl').set(user.photoUrl);
@@ -53,21 +51,20 @@ app.post("/loginUser", jsonParser, async (req, res) => {
 });
 app.put("/updateUserInfo", jsonParser, async (req, res) => {
   const { tempUser } = req.body;
-  try{
+  try {
     db.ref("users").child(tempUser.id).child('firstName').set(tempUser.firstName);
     db.ref("users").child(tempUser.id).child('lastName').set(tempUser.lastName);
     res.send("OK").status(200)
   }
-  catch(e){
-    console.log("error",e)
+  catch (e) {
+    console.log("error", e)
     res.send("UPDATE FAILED").status(400)
   }
-  
 });
 
 app.post("/pushTripLocationsToUser", jsonParser, async (req, res) => {
   const { userID, userOrigin, userDestination, vehiclePlateNumber } = req.body;
-  db.ref("users").child(userID).child("trip").set({ userOrigin, userDestination, vehiclePlateNumber,state:"WAITING_FOR_VEHICLE" });
+  db.ref("users").child(userID).child("trip").set({ userOrigin, userDestination, vehiclePlateNumber, state: "WAITING_FOR_VEHICLE" });
   res.sendStatus(200);
 });
 
@@ -77,7 +74,6 @@ app.put("/reassignVehiclesToUsers", jsonParser, async (req, res) => {
   db.ref("vehicles").once("value", (snapshot) => {
     const vehicles = snapshot.val();
     newAssignments.forEach(assign => {
-      console.log(assign[0]);
       // check if the new route is different than the old one
       if (assign[1] != vehicles[assign[0]].route.end_location.lat + ',' + vehicles[assign[0]].route.end_location.lng) {
         console.log('new route is different then the old route');
@@ -93,6 +89,11 @@ app.get("/getVehicles", async (req, res) => {
     res.send(snapshot.val());
   });
 });
+app.get('/getUserDirections', async (req, res) => {
+  db.ref('users').child(req.query.userID).child('trip').once('value', snapshot => {
+    res.send(snapshot.val());
+  })
+})
 app.get("/getVehiclesTowardsUsers", async (req, res) => {
   let tempVehiclesArray = [];
   db.ref("vehicles").once("value", (snapshot) => {
@@ -111,6 +112,21 @@ app.get("/api/getRoute", async (req, res) => {
     .then((response) => res.status(200).send(response.data))
     .catch((err) => console.log(err));
 });
+app.get('/getVehicleCurrentRoute', async (req, res) => {
+  db.ref('vehicles').child(req.query.plateNumber).child('route').once('value', snapshot => {
+    const object = {
+      destination: {
+        description: snapshot.val().start_address,
+        location: snapshot.val().start_location,
+      },
+      origin: {
+        description: snapshot.val().end_address,
+        location: snapshot.val().end_location,
+      }
+    }
+    res.status(200).send(JSON.stringify(object));
+  });
+})
 app.get("/getTotalDrivingTimeToUser", async (req, res) => {
   let sum = 0;
   db.ref("vehicles").once("value", (snapshot) => {
@@ -144,6 +160,8 @@ const addDemoVehicleListener = (vehicle) => {
   });
 }
 
+
+
 const initDemo = () => {
   vehicleRef.once("value", snapshot => {
     Object.values(snapshot.val()).forEach(vehicle => {
@@ -174,8 +192,8 @@ const demoVehicle = async (vehicle) => {
   else {
     // now we need to update his address and location to the trip end point
     vehicleRef.child(vehicle.plateNumber).child('currentLocation').set({ address: vehicle.route.end_address, location: { lat: vehicle.route.end_location.lat, lng: vehicle.route.end_location.lng } });
-    
-    await sendMessageToUser(vehicle.plateNumber,vehicle.state.assigned);
+
+    await sendMessageToUser(vehicle.plateNumber, vehicle.state.assigned);
 
     if (vehicle.state.type === 'TOWARDS_USER') {
       usersRef.child(vehicle.state.assigned).child('trip').child('state').set('TOWARDS_VEHICLE');
@@ -185,7 +203,7 @@ const demoVehicle = async (vehicle) => {
   }
 }
 
-const sendMessageToUser = async (plateNumber,userID) => {
+const sendMessageToUser = async (plateNumber, userID) => {
   // create the message to send to the user that the vehicle has arrived and will be waiting for him.
   let message;
   usersRef.child(userID).once('value', userSnapshot => {
@@ -205,18 +223,9 @@ const delay = ms => new Promise(res => setTimeout(res, ms))
 // // EXPO
 // ~~ Send push notifications to user ~~
 async function sendPushNotification(message) {
-  console.log('sending a message to the user', message)
-  // await axios
-  //   .post(
-  //     ``, { message }
-  //   )
-  //   .then((response) => response)
-  //   .catch((error) => console.log(error));
-
   await axios.post('https://exp.host/--/api/v2/push/send', message)
     .then(function (response) {
-      console.log('message has been sent');
-      console.log(response)
+      // console.log(response)
     })
     .catch(function (error) {
       console.log('message has not been sent');

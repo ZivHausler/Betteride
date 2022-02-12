@@ -5,7 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 // import { getDatabase, child, ref, get } from 'firebase/database';
 import { initializeApp } from 'firebase/app';
-import { selectUserAssignedVehicle, setUserAssignedVehicle } from '../slices/navSlice';
+import { selectUserAssignedVehicle, setDestination, setOrigin, setRouteShown, setTabShown, setUserAssignedVehicle } from '../slices/navSlice';
 import { useDispatch, useSelector } from 'react-redux';
 import AppLoading from 'expo-app-loading';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -57,18 +57,54 @@ const LoadingScreen = () => {
 
     useEffect(() => {
         registerForPushNotificationsAsync().then(token => {
-            setToken(token)
+            setToken(token);
             AsyncStorage.getItem('Users')
                 .then(result => {
-                    console.log("results")
                     if (!result) {
-                        console.log('There is no logged user...');
                         setTimeout(() => animateLoginPage(), 2000)
                     }
                     else {
-                        console.log('There is already a logged user!');
-                        dispatch(setUserInfo(JSON.parse(result).user));
-                        setTimeout(() => navigation.navigate('Map'), 2000)
+                        let user = JSON.parse(result).user;
+                        user['token'] = token;
+                        fetch(`http://${IP_ADDRESS}:3000/loginUser`, {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify({ user })
+                        })
+                            .then(response => response.json())
+                            .then(response => {
+                                let savedData = {
+                                    id: user.id,
+                                    email: user.email,
+                                    firstName: response.firstName,
+                                    lastName: response.lastName,
+                                    photoUrl: response.photoUrl
+                                }
+                                if (response?.trip?.state === 'TOWARDS_VEHICLE') {
+                                    dispatch(setTabShown('arrived_to_user'));
+                                    dispatch(setUserAssignedVehicle(response.trip.vehiclePlateNumber));
+                                }
+                                else if (response?.trip?.state === 'WAITING_FOR_VEHICLE') {
+                                    dispatch(setTabShown('null'));
+                                    dispatch(setUserAssignedVehicle(response.trip.vehiclePlateNumber));
+                                    fetch(`http://${IP_ADDRESS}:3000/getVehicleCurrentRoute?plateNumber=${response.trip.vehiclePlateNumber}`)
+                                        .then(response => response.json())
+                                        .then(response => {
+                                            dispatch(setRouteShown('vehicleToUser'))
+                                            dispatch(setOrigin(response.origin));
+                                            dispatch(setDestination(response.destination));
+                                        })
+                                        .catch(error => console.log('error', error))
+                                }
+                                else dispatch(setTabShown('order'));
+
+
+                                dispatch(setUserInfo(savedData));
+                            })
+                            .catch(e => console.log(e))
+                        setTimeout(() => navigation.navigate('Map'), 2000);
                     }
                 })
                 .catch(error => console.log('error', error))
@@ -76,12 +112,12 @@ const LoadingScreen = () => {
 
         // This listener is fired whenever a notification is received while the app is foregrounded
         notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
-            console.log("addNotificationReceivedListener")
+            dispatch(setTabShown('arrived_to_user'));
         });
 
         // This listener is fired whenever a user taps on or interacts with a notification (works when app is foregrounded, backgrounded, or killed)
         responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
-            console.log("addNotificationResponseReceivedListener")
+            dispatch(setTabShown('arrived_to_user'));
         });
 
         return () => {
@@ -89,8 +125,6 @@ const LoadingScreen = () => {
             Notifications.removeNotificationSubscription(responseListener.current);
         };
     }, []);
-
-
 
     const registerForPushNotificationsAsync = async () => {
         let token;
@@ -136,10 +170,9 @@ const LoadingScreen = () => {
                 if (type === 'success') {
                     // generate token before pushing information
                     if (Device.isDevice) {
-                        console.log("TOKEN",token)
-                        user['token'] = token
+                        user['token'] = token;
                         // get higher photo quality
-                        user.photoUrl = user.photoUrl.replace('96','500')
+                        user.photoUrl = user.photoUrl.replace('96', '500')
                         fetch(`http://${IP_ADDRESS}:3000/loginUser`, {
                             method: "POST",
                             headers: {
@@ -156,7 +189,9 @@ const LoadingScreen = () => {
                                     lastName: response.lastName,
                                     photoUrl: response.photoUrl
                                 }
-                                console.log(savedData)
+                                if (response?.trip.state === 'TOWARDS_VEHICLE') dispatch(setTabShown('arrived_to_user'));
+                                else if (response?.trip.state === 'WAITING_FOR_VEHICLE') dispatch(setTabShown('null'));
+                                else dispatch(setTabShown('order'));
                                 storeUserData(savedData);
                                 dispatch(setUserInfo(savedData));
                                 navigation.navigate('Map');
@@ -165,6 +200,7 @@ const LoadingScreen = () => {
                     }
                     else {
                         storeUserData(user);
+                        navigation.navigate('Map');
                     }
                 }
                 else console.log('Google signin was canceled');
@@ -183,7 +219,6 @@ const LoadingScreen = () => {
             toValue: 1,
             duration: 600,
             useNativeDriver: true,
-
         }).start();
     }
 

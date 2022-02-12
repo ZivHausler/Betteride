@@ -17,6 +17,11 @@ app.listen(3001, async () => {
   console.log("Waiting for a request...");
 });
 
+app.get('/api/getUserDirections', async (req, res) => {
+  const { origin, destination } = req.query;
+  res.status(200).send(await getDirectionsByAddress(origin, destination));
+});
+
 app.get("/api/OrderVehicle", async (req, res) => {
   console.log("order")
   const { userOrigin, userDestination, userID } = req.query;
@@ -137,9 +142,13 @@ const getDirectionsByAddress = async (from, to) => {
     .get(
       `https://maps.googleapis.com/maps/api/directions/json?origin=${from}&destination=${to}&key=${googleMapsKey}`
     )
-    .then((response) => response.data)
-    .catch((error) => console.log("error"));
+    .then((response) => {
+      console.log(response.data.routes[0].legs[0]);
+      return response.data.routes[0].legs[0];
+    })
+    .catch((error) => console.log(error));
 };
+
 const sortedVehicleArray = (nearestVehicles) => {
   // Create items array
   let sortedArray = Object.keys(nearestVehicles).map(function (key) {

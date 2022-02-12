@@ -30,6 +30,7 @@ const ConfirmOrder = () => {
   const confirmRide = () => {
     // show loading animation
     setIsSearchingVehicle(true)
+    console.log(IP_ADDRESS);
     // then fetch the nearest vehicle
     // then do this VV
     // const baseUrl = Platform.OS === 'android' ? 'http://'+IP_ADDRESS : 'http://localhost';
@@ -49,7 +50,7 @@ const ConfirmOrder = () => {
         // dispatch(setOrigin(null));
         dispatch(setDestination(null));
         dispatch(setRouteShown('vehicleToUser'));;
-        dispatch(setTabShown('order'));
+        dispatch(setTabShown('fulfilled'));
       })
       .catch(e => {
         console.log(e)

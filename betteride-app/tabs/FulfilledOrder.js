@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native'
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { FlatList, Image, Animated, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { Icon } from 'react-native-elements'
 import { useSelector } from 'react-redux'
@@ -26,9 +26,20 @@ const FulfilledOrder = () => {
             useNativeDriver: true,
         }).start(() => {
             dispatch(setTabShown(null))
-        }
-        );
+        });
     };
+
+    useEffect(() => {
+        setTimeout(() => {
+            Animated.timing(fadeAnim, {
+                toValue: 0,
+                duration: 300,
+                useNativeDriver: true,
+            }).start(() => {
+                dispatch(setTabShown(null))
+            });
+        }, 7500)
+    }, [])
 
     return (
         <Animated.View style={[styles.orderContainer, { opacity: fadeAnim }, tw`shadow-lg`]} >
