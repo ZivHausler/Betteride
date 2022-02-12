@@ -49,12 +49,40 @@ app.post("/loginUser", jsonParser, async (req, res) => {
     }
   })
 });
+app.put("/finishTrip", async (req, res) => {
+  const { plateNumber, userID } = req.query;
+  try {
+    //save trip to history
+    vehicleRef.child(plateNumber).child('route').once("value", (vehicleSnapshot) => {
+      usersRef.child(userID).child('travelHistory').once("value", (userSnapshot) => {
+        let tempArray = [];
+        if (userSnapshot.val()) {
+          tempArray = [...userSnapshot.val()];
+        }
+        let tempTrip = vehicleSnapshot.val();
+        tempTrip['plateNumber'] = plateNumber;
+        tempArray.push(tempTrip);
+        usersRef.child(userID).child('travelHistory').set(tempArray);
+      })
+    })
+
+    // reseting the states
+    usersRef.child(userID).child('trip').set(null);
+    vehicleRef.child(plateNumber).child('route').set(null);
+    vehicleRef.child(plateNumber).child('state').set(null)
+    res.send("OK").status(200)
+  }
+  catch (e) {
+    console.log("error", e)
+    res.send("UPDATE FAILED").status(400)
+  }
+});
 
 app.put("/updateUserVehicleState", jsonParser, async (req, res) => {
   const { plateNumber, userID, state } = req.body;
   try {
     if (state === "TOGETHER") {
-      db.ref("vehicle").child(plateNumber).child("state").child("type").set("WITH_USER");
+      db.ref("vehicles").child(plateNumber).child("state").child("type").set("WITH_USER");
       db.ref("users").child(userID).child('trip').child("state").child("type").set('TOWARDS_DESTINATION');
     }
     res.send("OK").status(200)
@@ -133,12 +161,12 @@ app.get('/getVehicleCurrentRoute', async (req, res) => {
   db.ref('vehicles').child(req.query.plateNumber).child('route').once('value', snapshot => {
     const object = {
       destination: {
-        description: snapshot.val().start_address,
-        location: snapshot.val().start_location,
-      },
-      origin: {
         description: snapshot.val().end_address,
         location: snapshot.val().end_location,
+      },
+      origin: {
+        description: snapshot.val().start_address,
+        location: snapshot.val().start_location,
       }
     }
     res.status(200).send(JSON.stringify(object));
@@ -222,10 +250,10 @@ const demoVehicle = async (vehicle) => {
     }
     else if (vehicle.state.type === 'WITH_USER') {
       // implement data saving to history
-      // reseting the states
-      usersRef.child(vehicle.state.assigned).child('trip').set(null);
-      vehicleRef.child(vehicle.plateNumber).child('route').set(null);
-      vehicleRef.child(vehicle.plateNumber).child('state').set(null)
+
+      usersRef.child(vehicle.state.assigned).child('trip').child('state').child("type").set('WAIT_TO_EXIT');
+      vehicleRef.child(vehicle.plateNumber).child('state').child('type').set('WAIT_USER_EXIT');
+
     }
   }
 }
@@ -233,7 +261,7 @@ const demoVehicle = async (vehicle) => {
 const sendMessageToUser = async (plateNumber, userID, type) => {
   // create the message to send to the user that the vehicle has arrived and will be waiting for him.
   let message;
-  
+
   usersRef.child(userID).once('value', userSnapshot => {
     message = {
       to: userSnapshot.val().token,

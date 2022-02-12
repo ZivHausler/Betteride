@@ -5,6 +5,8 @@ import { Marker } from "react-native-maps";
 import { GOOGLE_MAPS_APIKEY } from '@env';
 
 const RenderRoute = ({ origin, destination, color }) => {
+    // console.log("RenderRoute origin",origin)
+    // console.log("RenderRoute destination",destination)
     return (
         <>
             <MapViewDirections origin={{latitude:origin.location.lat,longitude:origin.location.lng}} destination={{latitude:destination.location.lat,longitude:destination.location.lng}}

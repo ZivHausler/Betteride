@@ -13,6 +13,7 @@ import "react-native-gesture-handler";
 import Menu from "../components/Menu";
 import FulfilledOrder from "../tabs/FulfilledOrder";
 import ArrivedToUser from "../tabs/ArrivedToUser";
+import ArrivedToDestination from "../tabs/ArrivedToDestination";
 
 const MapScreen = () => {
   const dispatch = useDispatch();
@@ -35,6 +36,9 @@ const MapScreen = () => {
         break;
       case 'arrived_to_user':
         setCurrentTab(<ArrivedToUser />);
+        break;
+      case 'arrived_to_destination':
+        setCurrentTab(<ArrivedToDestination />);
         break;
       default: setCurrentTab(null);
         break;

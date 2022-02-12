@@ -4,7 +4,7 @@ import { FlatList, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View
 import { Icon } from 'react-native-elements'
 import { useSelector } from 'react-redux'
 import tw from 'tailwind-react-native-classnames'
-import { selectDestination, selectOrigin, selectTravelTimeInformation, setDestination, setOrigin, setRouteShown, setUserAssignedVehicle } from '../slices/navSlice'
+import { selectDestination, selectOrigin, selectTravelTimeInformation, selectUserAssignedVehicle, setDestination, setOrigin, setRouteShown, setUserAssignedVehicle } from '../slices/navSlice'
 import { useDispatch } from "react-redux";
 import { setTabShown } from '../slices/navSlice'
 import Intl from 'intl/lib/core'
@@ -12,49 +12,41 @@ import { Platform } from 'react-native'
 import { IP_ADDRESS } from "@env";
 import { selectUserInfo } from '../slices/userSlice'
 
-const ArrivedToUser = () => {
+const ArrivedToDestination = () => {
     const dispatch = useDispatch();
     const navigation = useNavigation();
     const [selected, setSelected] = useState(null);
     const travelTimeInformation = useSelector(selectTravelTimeInformation);
     const origin = useSelector(selectOrigin)
     const destination = useSelector(selectDestination)
-    const [isSearchingVehicle, setIsSearchingVehicle] = useState(false)
     const userData = useSelector(selectUserInfo);
+    const userAssignedVehicle = useSelector(selectUserAssignedVehicle)
 
-    const startRide = async () => {
-        let response = await fetch(`http://${IP_ADDRESS}:3001/api/generateRouteToVehicle?userID=${userData.id}`, {
+    const finishTrip = async () => {
+        let response = await fetch(`http://${IP_ADDRESS}:3000/finishTrip?userID=${userData.id}&plateNumber=${userAssignedVehicle}`, {
             method: "PUT",
         })
-        response = await response.json();
-        dispatch(setTabShown(null))
-        dispatch(setOrigin(response.origin))
-        dispatch(setDestination(response.destination))
-        dispatch(setRouteShown('userToDestination'))
+        // clear data -
+        dispatch(setRouteShown(null))
+        dispatch(setOrigin(null))
+        dispatch(setDestination(null))
+        dispatch(setTabShown('order'))
     }
 
     return (
         <SafeAreaView style={[styles.orderContainer, tw`justify-between shadow-lg`]}>
-            <Text style={tw`text-blue-400 font-bold text-xl my-4 text-center`}>Your vehicle has arrived!</Text>
+            <Text style={tw`text-blue-400 font-bold text-xl my-4 text-center`}>You have arrived to {'destination'}!</Text>
             <View style={tw`justify-center items-center my-1 px-2`}>
-                <Text style={[tw`text-center my-1`, { fontSize: 15 }]}>Make sure you are buckled up and ready to ride.</Text>
-                <Text style={[tw`text-center my-1`, { fontSize: 15 }]}>Please confirm your presence inside the vehicle to begin the journey.</Text>
+                <Text style={[tw`text-center my-1`, { fontSize: 15 }]}>Please step outside of the vehicle.</Text>
             </View>
-
-            {!isSearchingVehicle ?
-                <TouchableOpacity activeOpacity={.5} onPress={startRide} style={styles.appButtonContainer}>
-                    <Text style={styles.appButtonText}>I'm in. Let's go!</Text>
-                </TouchableOpacity>
-                :
-                <View style={styles.loadOrderContainer}>
-                    <Text style={styles.loadingText}>Completing your order</Text>
-                    <ActivityIndicator color={'white'} style={tw`mt-1`} />
-                </View>}
+            <TouchableOpacity activeOpacity={.5} onPress={finishTrip} style={styles.appButtonContainer}>
+                <Text style={styles.appButtonText}>I'm outside!</Text>
+            </TouchableOpacity>
         </SafeAreaView >
     )
 }
 
-export default ArrivedToUser;
+export default ArrivedToDestination;
 
 const styles = StyleSheet.create({
     orderContainer: {

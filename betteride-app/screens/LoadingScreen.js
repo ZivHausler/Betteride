@@ -87,15 +87,15 @@ const LoadingScreen = () => {
                                         dispatch(setTabShown('arrived_to_user'));
                                         dispatch(setUserAssignedVehicle(response.trip.state.assigned));
                                         break;
-                                    case 'WAITING_FOR_VEHICLE': case 'TOWRADS_DESTINATION':
-                                        dispatch(setTabShown('null'));
-                                        dispatch(setUserAssignedVehicle(response.trip.vehiclePlateNumber));
-                                        fetch(`http://${IP_ADDRESS}:3000/getVehicleCurrentRoute?plateNumber=${response.trip.vehiclePlateNumber}`)
+                                    case 'WAITING_FOR_VEHICLE': case 'TOWRADS_DESTINATION': case 'WAIT_TO_EXIT':
+                                        dispatch(setTabShown(response?.trip?.state.type === 'WAIT_TO_EXIT' ? 'arrived_to_destination' : null));
+                                        dispatch(setUserAssignedVehicle(response.trip.state.assigned));
+                                        fetch(`http://${IP_ADDRESS}:3000/getVehicleCurrentRoute?plateNumber=${response.trip.state.assigned}`)
                                             .then(response => response.json())
-                                            .then(response => {
-                                                dispatch(setRouteShown(response?.trip?.state.type === 'vehicleToUser' ? 'vehicleToUser' : 'userToDestination'))
-                                                dispatch(setOrigin(response.origin));
-                                                dispatch(setDestination(response.destination));
+                                            .then(vehicleResponse => {
+                                                dispatch(setRouteShown(response?.trip.state.type === 'vehicleToUser' ? 'vehicleToUser' : 'userToDestination'))
+                                                dispatch(setOrigin(response.trip.state.type === 'WAIT_TO_EXIT' ? vehicleResponse.destination : vehicleResponse.origin ));
+                                                dispatch(setDestination(vehicleResponse.destination));
                                             })
                                             .catch(error => console.log('error', error))
                                         break
@@ -114,14 +114,21 @@ const LoadingScreen = () => {
 
         // This listener is fired whenever a notification is received while the app is foregrounded
         notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
-            console.log(notification.request.content.data.type)
-            dispatch(setTabShown('arrived_to_user'));
+            switch (notification.request.content.data.type) {
+                case "TOWARDS_USER":
+                    dispatch(setTabShown('arrived_to_user'));
+                    break;
+                case 'WITH_USER':
+                    dispatch(setTabShown('arrived_to_destination'));
+                    break;
+                default:
+                    break;
+            }
         });
 
         // This listener is fired whenever a user taps on or interacts with a notification (works when app is foregrounded, backgrounded, or killed)
-        responseListener.current = Notifications.addNotificationResponseReceivedListener(notification => {
-            console.log(notification.request.content.data.type)
-            dispatch(setTabShown('arrived_to_user'));
+        responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+            console.log("User clicked on the notification")
         });
 
         return () => {
