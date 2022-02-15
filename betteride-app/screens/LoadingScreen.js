@@ -8,13 +8,14 @@ import { selectUserAssignedVehicle, setDestination, setOrigin, setRouteShown, se
 import { useDispatch, useSelector } from 'react-redux';
 import AppLoading from 'expo-app-loading';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { selectUserInfo, setUserInfo,setUserLocation } from '../slices/userSlice';
+import { selectUserInfo, setUserInfo, setUserLocation } from '../slices/userSlice';
 import LoginButton from '../components/LoginButton';
 import * as Google from 'expo-google-app-auth';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { IP_ADDRESS } from '@env'
 import * as Location from 'expo-location';
+import { setVehiclePlateNumber } from '../slices/vehicleSlice';
 
 
 const LoadingScreen = ({ navigation, route }) => {
@@ -40,7 +41,6 @@ const LoadingScreen = ({ navigation, route }) => {
     const dispatch = useDispatch();
     const vehiclePlateNumber = useSelector(selectUserAssignedVehicle);
     // const user = useSelector(selectUserInfo);
-    const [user, setUser] = useState(null);
     const yAnimation = useRef(new Animated.Value(0)).current;
     const translateY = yAnimation.interpolate({ inputRange: [0, 1], outputRange: [0, -150] })
     const translateLogo = yAnimation.interpolate({ inputRange: [0, 1], outputRange: [0, 75] })
@@ -85,8 +85,8 @@ const LoadingScreen = ({ navigation, route }) => {
                                 let savedData = {
                                     id: user.id,
                                     email: user.email,
-                                    firstName: response.firstName,
-                                    lastName: response.lastName,
+                                    givenName: response.givenName,
+                                    familyName: response.familyName,
                                     photoUrl: response.photoUrl
                                 }
                                 switch (response?.trip?.state?.type) {
@@ -108,11 +108,13 @@ const LoadingScreen = ({ navigation, route }) => {
                                         break;
                                     default:
                                         dispatch(setTabShown('order'));
+                                        dispatch(setOrigin(null));
+                                        dispatch(setDestination(null));
                                         break;
                                 }
                                 dispatch(setUserInfo(savedData));
                             })
-                            .catch(e => console.log(e))
+                            .catch(e => alert('inside fetch error', e))
                         setTimeout(() => navigation.navigate('Map'), 2000);
                     }
                 })
@@ -204,21 +206,21 @@ const LoadingScreen = ({ navigation, route }) => {
                                 let savedData = {
                                     id: user.id,
                                     email: user.email,
-                                    firstName: response.firstName,
-                                    lastName: response.lastName,
-                                    photoUrl: response.photoUrl
+                                    givenName: response.givenName,
+                                    familyName: response.familyName,
+                                    photoUrl: response.photoUrl,
                                 }
                                 try {
                                     if (response?.trip?.state?.type === 'TOWARDS_VEHICLE') dispatch(setTabShown('arrived_to_user'));
                                     else if (response?.trip?.state?.type === 'WAITING_FOR_VEHICLE') dispatch(setTabShown('null'));
+                                    else if (response?.trip?.state?.type === 'WAIT_TO_EXIT') dispatch(setTabShown('arrived_to_destination'));
                                     else dispatch(setTabShown('order'));
                                 }
                                 catch (e) { console.log(e) }
                                 storeUserData(savedData);
-                                dispatch(setUserInfo(savedData));
                                 navigation.navigate('Map');
                             })
-                            .catch(e => console.log(e))
+                            .catch(e => alert(e))
                     }
                     else {
                         storeUserData(user);
@@ -232,20 +234,20 @@ const LoadingScreen = ({ navigation, route }) => {
     }
     useEffect(() => {
         (async () => {
-          let { status } = await Location.requestForegroundPermissionsAsync();
-          if (status !== 'granted') {
-            setErrorMsg('Permission to access location was denied');
-            return;
-          }
-          let location = await Location.getCurrentPositionAsync({});
-          dispatch(setUserLocation(location));
+            let { status } = await Location.requestForegroundPermissionsAsync();
+            if (status !== 'granted') {
+                setErrorMsg('Permission to access location was denied');
+                return;
+            }
+            let location = await Location.getCurrentPositionAsync({});
+            dispatch(setUserLocation(location));
         })();
-      }, []);
+    }, []);
 
     const storeUserData = (user) => {
+        dispatch(setUserInfo(user));
         AsyncStorage.setItem('Users', JSON.stringify({ user }))
             .catch(error => console.log('error', error));
-        setUser(user);
     }
 
     const animateLoginPage = () => {

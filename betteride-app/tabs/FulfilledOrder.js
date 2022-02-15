@@ -1,56 +1,41 @@
 import { useNavigation } from '@react-navigation/native'
-import React, { useState, useRef, useEffect } from 'react'
-import { FlatList, Image, Animated, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import React, { useEffect } from 'react'
+import { Animated, StyleSheet, Text, TouchableOpacity, View, } from 'react-native'
 import { Icon } from 'react-native-elements'
 import { useSelector } from 'react-redux'
 import tw from 'tailwind-react-native-classnames'
-import { selectTravelTimeInformation, setRouteShown } from '../slices/navSlice'
+import { selectTabShown, selectTravelTimeInformation } from '../slices/navSlice'
 import { useDispatch } from "react-redux";
 import { setTabShown } from '../slices/navSlice'
-import Intl from 'intl/lib/core'
 import { Platform } from 'react-native'
 
 const FulfilledOrder = () => {
     const dispatch = useDispatch();
+    const tabShown = useSelector(selectTabShown)
     const navigation = useNavigation();
-    const [selected, setSelected] = useState(null);
     const travelTimeInformation = useSelector(selectTravelTimeInformation);
 
-    // // animation vars
-    // const fadeAnim = useRef(new Animated.Value(1)).current;
-    // // animation function
-    // const fadeOut = () => {
-    //     Animated.timing(fadeAnim, {
-    //         toValue: 0,
-    //         duration: 300,
-    //         useNativeDriver: true,
-    //     }).start(() => {
-    //         dispatch(setTabShown(null))
-    //     });
-    // };
+    useEffect(() => {
+        if (tabShown !== 'fulfilled') return;
+        setTimeout(() => { skipNext() }, 3000);
+    }, [tabShown])
 
-    // useEffect(() => {
-    //     setTimeout(() => {
-    //         Animated.timing(fadeAnim, {
-    //             toValue: 0,
-    //             duration: 300,
-    //             useNativeDriver: true,
-    //         }).start(() => {
-    //             dispatch(setTabShown(null))
-    //         });
-    //     }, 4000)
-    // }, [])
+    const skipNext = () => { dispatch(setTabShown('vehicle_location')); }
 
     return (
-        <Animated.View style={[styles.orderContainer, {  }, tw`shadow-lg`]} >
-            <TouchableOpacity style={tw` px-1 justify-around items-center `} activeOpacity={1}>
-                <Text style={tw`text-blue-400 font-bold text-xl my-1`}>Booking successful</Text>
-                <View style={tw`justify-center items-center my-1`}>
-                    <Text style={tw`text-center`}>Your booking has been confirmed!</Text>
-                    <Text style={tw`text-center`}>Your ride will be waiting for you approximately at 10:15</Text>
+        <Animated.View style={[tw`bg-white items-center justify-between`, { width: '100%', height: '92%' }]}>
+            <Text style={[{ height: 35 }, tw`text-3xl font-bold`]}>Order fulfilled</Text>
+            <Text style={[tw`absolute bottom-14`, { left: '20%', fontSize: 36 }]}>🎉</Text>
+            <Text style={[tw`absolute bottom-0`, { right: '20%', fontSize: 36, transform: [{ translateX: 8 }] }]}>🥳</Text>
+            <View style={tw`px-3 items-center w-full`}>
+                <Text style={[tw`text-blue-400 font-bold mb-1 text-center`, { fontSize: 16 }]}>Your order has been successfully registered</Text>
+                <View style={tw`justify-center items-center my-1 w-full`}>
+                    <Text style={[tw`text-center my-1`, { fontSize: 16 }]}>The estimated time of arrival of the vehicle is 15 minutes and will arrive at 10:15</Text>
                 </View>
-                <View style={tw`p-1 h-10 w-10 bg-green-300 rounded-full shadow justify-center items-center my-2`}>
-                    <Icon name="done" type="material" color={'green'} size={30} />
+            </View>
+            <TouchableOpacity onPress={() => skipNext()} style={tw` justify-around items-center px-4 mt-5`} activeOpacity={1}>
+                <View style={tw`p-1 h-20 w-20 bg-green-300 rounded-full shadow-md justify-center items-center my-2`}>
+                    <Icon name="done" type="material" color={'green'} size={64} />
                 </View>
             </TouchableOpacity>
         </Animated.View >

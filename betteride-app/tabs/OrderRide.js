@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { StyleSheet, Text, View, SafeAreaView, TouchableOpacity } from 'react-native'
+import { StyleSheet, Text, View, SafeAreaView, TouchableOpacity, Button } from 'react-native'
 import tw from 'tailwind-react-native-classnames';
 import GoogleAutocomplete from "../components/GoogleAutocomplete";
 import { selectDestination, selectOrigin, selectRouteShown, selectTabShown, setDestination, setOrigin, setTabShown, setRouteShown } from '../slices/navSlice'
@@ -7,7 +7,7 @@ import DotsAndLines from "../components/DotsAndLines";
 import { useDispatch, useSelector } from "react-redux";
 import { Platform } from 'react-native'
 import { GOOGLE_MAPS_APIKEY } from '@env';
-
+import * as Animatable from 'react-native-animatable'
 
 const OrderRide = () => {
     const axios = require("axios");
@@ -23,6 +23,10 @@ const OrderRide = () => {
         };
         dispatch(setTabShown('confirm'));
     }
+
+    useEffect(() => {
+
+    }, [isRouteValid])
 
     const validateRoute = async (dataType, object) => {
         if (dataType === "origin" && destination || dataType === "destination" && origin) {
@@ -59,18 +63,27 @@ const OrderRide = () => {
     }, [origin, destination])
 
     return (
-        <View style={[styles.orderContainer, tw`bg-white shadow-lg`, { width: '100%' }]}>
-            <View style={[styles.orderBox, tw`shadow-lg`]}>
-                <DotsAndLines amountOfLines={13} />
-                <View style={tw`w-5/6 flex flex-col justify-between`}>
-                    <GoogleAutocomplete dataType={"origin"} validateRoute={validateRoute} text={['PICK UP', 'Where from?']} />
-                    <GoogleAutocomplete dataType={"destination"} validateRoute={validateRoute} text={['DROP OFF', 'Where to?']} />
+        <View style={[tw`bg-white items-center justify-between`, { width: '100%', height: '92%' }]}>
+            <Text style={[{ height: 35 }, tw`text-3xl font-bold mb-3`]}>Order a ride</Text>
+            <View style={[tw`shadow-md flex-col px-4`]}>
+                <Text style={[tw`text-center mb-3`, { fontSize: 16 }]}>To place a vehicle reservation, make sure you insert source and destination.</Text>
+                <View style={[tw`flex-row rounded-xl pt-2 bg-gray-200`, { backgroundColor: '#b6b9b8' }]}>
+                    <DotsAndLines amountOfLines={13} />
+                    <View style={tw`w-5/6 flex flex-col justify-between`}>
+                        <GoogleAutocomplete dataType={"origin"} validateRoute={validateRoute} text={['PICK UP', 'Where from?']} />
+                        <GoogleAutocomplete dataType={"destination"} validateRoute={validateRoute} text={['DROP OFF', 'Where to?']} />
+                    </View>
                 </View>
             </View>
-            <View style={tw``}>
-                <TouchableOpacity disabled={!isRouteValid} activeOpacity={.5} onPress={findRide} style={[styles.appButtonContainer, tw`${isRouteValid ? null : 'bg-gray-300'}`]}>
-                    <Text style={styles.appButtonText}>Send Request</Text>
-                </TouchableOpacity>
+            <View style={tw`h-14`}>
+                {isRouteValid &&
+                    <Animatable.View style={tw``} animation={'fadeInUp'} delay={0}>
+                        <TouchableOpacity disabled={!isRouteValid} activeOpacity={.5} onPress={findRide} style={[{
+                            backgroundColor: "#79aee2", borderRadius: 15, paddingVertical: 16, paddingHorizontal: 12
+                        }, tw`${isRouteValid ? null : 'bg-gray-300'}`]}>
+                            <Text style={styles.appButtonText}>Send Request</Text>
+                        </TouchableOpacity>
+                    </Animatable.View>}
             </View>
         </View>
     )
@@ -79,39 +92,19 @@ const OrderRide = () => {
 export default OrderRide
 
 const styles = StyleSheet.create({
-    orderContainer: {
-        bottom: Platform.OS === "ios" ? 30 : 20,
-        left: 0,
-        padding: 10,
-        borderRadius: 20,
-        width: '95%',
-        marginLeft: '2.5%',
-        display: 'flex',
-    },
-    orderBox: {
-        padding: 10,
-        display: 'flex',
-        flexDirection: 'row',
-        paddingBottom: -5,
-    },
-    orderAction: {
-        fontSize: 12,
-        color: 'gray',
-    },
-    orderInput: {
-        fontSize: 18,
-        color: 'black',
-    },
     appButtonContainer: {
         backgroundColor: "#79aee2",
         borderRadius: 15,
-        paddingVertical: 15,
-        paddingHorizontal: 12
+        paddingVertical: 16,
+        paddingHorizontal: 12,
+        marginHorizontal: Platform.OS === "ios" ? 10 : 0,
+        marginBottom: Platform.OS === "ios" ? 5 : 0,
+        marginTop: 25,
     },
     appButtonText: {
         fontSize: 18,
         color: "#fff",
         fontWeight: "bold",
         alignSelf: "center",
-    }
-});
+    },
+})

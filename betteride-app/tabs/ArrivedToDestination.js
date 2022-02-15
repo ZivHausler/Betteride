@@ -34,15 +34,17 @@ const ArrivedToDestination = () => {
     }
 
     return (
-        <SafeAreaView style={[styles.orderContainer, tw`justify-between shadow-lg`]}>
-            <Text style={tw`text-blue-400 font-bold text-xl my-4 text-center`}>You have arrived to {'destination'}!</Text>
+        <View style={[tw`bg-white items-center justify-between`, { width: '100%', height: '92%'}]}>
+            <Text style={[{ height: 35 }, tw`text-3xl font-bold`]}>Arrived to destination</Text>
             <View style={tw`justify-center items-center my-1 px-2`}>
-                <Text style={[tw`text-center my-1`, { fontSize: 15 }]}>Please step outside of the vehicle.</Text>
+                <Text style={[tw`text-blue-400 font-semibold mb-1 text-center`, { fontSize: 16 }]}>You have arrived to {'destination'}!</Text>
+                <Text style={[tw`text-center my-1`, { fontSize: 16 }]}>To release the vehicle, please exit the right side of the it.</Text>
+                <Text style={[tw`text-center my-1`, { fontSize: 16 }]}>Once you have safely got out of the vehicle, press the button to release the vehicle.</Text>
             </View>
             <TouchableOpacity activeOpacity={.5} onPress={finishTrip} style={styles.appButtonContainer}>
-                <Text style={styles.appButtonText}>I'm outside!</Text>
+                <Text style={styles.appButtonText}>I'm outside. You are free!</Text>
             </TouchableOpacity>
-        </SafeAreaView >
+        </View >
     )
 }
 

@@ -27,30 +27,33 @@ const ArrivedToUser = () => {
             method: "PUT",
         })
         response = await response.json();
-        dispatch(setTabShown(null))
-        dispatch(setOrigin(response.origin))
-        dispatch(setDestination(response.destination))
-        dispatch(setRouteShown('userToDestination'))
+        dispatch(setTabShown('with_user'));
+        dispatch(setOrigin(response.origin));
+        dispatch(setDestination(response.destination));
+        dispatch(setRouteShown('userToDestination'));
     }
 
     return (
-        <SafeAreaView style={[styles.orderContainer, tw`justify-between shadow-lg`]}>
-            <Text style={tw`text-blue-400 font-bold text-xl my-4 text-center`}>Your vehicle has arrived!</Text>
-            <View style={tw`justify-center items-center my-1 px-2`}>
-                <Text style={[tw`text-center my-1`, { fontSize: 15 }]}>Make sure you are buckled up and ready to ride.</Text>
-                <Text style={[tw`text-center my-1`, { fontSize: 15 }]}>Please confirm your presence inside the vehicle to begin the journey.</Text>
+        <View style={[tw`bg-white items-center justify-between`, { width: '100%', height: '92%'}]}>
+            <Text style={[{ height: 35 }, tw`text-3xl font-bold`]}>Vehicle has arrived</Text>
+            <View style={tw`px-4`}>
+                <Text style={[tw`text-blue-400 font-semibold mb-1 text-center`, { fontSize: 16 }]}>A vehicle with a plate number of 8XB-345 has just arrived to the requested location</Text>
+                <View style={tw`justify-center items-center my-1 px-2`}>
+                    <Text style={[tw`text-center my-1`, { fontSize: 16 }]}>Please confirm your presence inside the vehicle to begin the journey.</Text>
+                    <Text style={[tw`text-center my-1`, { fontSize: 16 }]}>Make sure you are buckled up and ready to ride.</Text>
+                </View>
             </View>
 
             {!isSearchingVehicle ?
                 <TouchableOpacity activeOpacity={.5} onPress={startRide} style={styles.appButtonContainer}>
-                    <Text style={styles.appButtonText}>I'm in. Let's go!</Text>
+                    <Text style={styles.appButtonText}>I'm inside and ready. Let's go!</Text>
                 </TouchableOpacity>
                 :
                 <View style={styles.loadOrderContainer}>
                     <Text style={styles.loadingText}>Completing your order</Text>
                     <ActivityIndicator color={'white'} style={tw`mt-1`} />
                 </View>}
-        </SafeAreaView >
+        </View >
     )
 }
 
@@ -75,7 +78,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         marginHorizontal: Platform.OS === "ios" ? 10 : 0,
         marginBottom: Platform.OS === "ios" ? 5 : 0,
-        marginTop: 25,
+        marginTop: 0,
     },
     loadOrderContainer: {
         backgroundColor: "#79aee2",

@@ -43,7 +43,7 @@ app.post("/loginUser", jsonParser, async (req, res) => {
     }
     else {
       // new user has been logged!
-      userObj = { firstName: user.givenName, lastName: user.familyName, token: user.token, photoUrl: user.photoUrl, email: user.email, token: user.token }
+      userObj = { givenName: user.givenName, familyName: user.familyName, token: user.token, photoUrl: user.photoUrl, email: user.email, token: user.token }
       db.ref("users").child(user.id).set(userObj)
       res.send(JSON.stringify(userObj)).status(200);
     }
@@ -194,7 +194,7 @@ const getDirections = async (from, to) => {
     .catch((error) => console.log("error"));
 };
 // demo vehicle 
-const demoSpeed = 50 // how fast the car will rerender to the map
+const demoSpeed = 100 // how fast the car will rerender to the map
 const vehicleRef = db.ref("vehicles");
 const usersRef = db.ref('users');
 
@@ -266,7 +266,7 @@ const sendMessageToUser = async (plateNumber, userID, type) => {
     message = {
       to: userSnapshot.val().token,
       sound: 'default',
-      title: type === 'TOWARDS_USER' ? `${userSnapshot.val().firstName}, Your vehicle has arrived` : `${userSnapshot.val().firstName}, You have arrived to your destination!`,
+      title: type === 'TOWARDS_USER' ? `${userSnapshot.val().givenName}, Your vehicle has arrived` : `${userSnapshot.val().familyName}, You have arrived to your destination!`,
       body: type === 'TOWARDS_USER' ? `It's plate number is ${plateNumber}` : `Please step out from the vehicle`,
       data: { type },
     }

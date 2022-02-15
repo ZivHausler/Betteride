@@ -18,16 +18,17 @@ const ConfirmOrder = () => {
   const navigation = useNavigation();
   const [selected, setSelected] = useState(null);
   const travelTimeInformation = useSelector(selectTravelTimeInformation);
-  const origin = useSelector(selectOrigin)
-  const destination = useSelector(selectDestination)
-  const [isSearchingVehicle, setIsSearchingVehicle] = useState(false)
-  const userData = useSelector(selectUserInfo)
+  const origin = useSelector(selectOrigin);
+  const destination = useSelector(selectDestination);
+  const [isSearchingVehicle, setIsSearchingVehicle] = useState(false);
+  const userData = useSelector(selectUserInfo);
 
   const milesToKM = (string) => {
     if (!string) return;
     return (parseInt(string.split(' ')[0]) * 1.6).toFixed(1);
   }
   const confirmRide = () => {
+    if (!userData) return;
     // show loading animation
     setIsSearchingVehicle(true)
     console.log(IP_ADDRESS);
@@ -58,50 +59,48 @@ const ConfirmOrder = () => {
       .finally(() => {
         setIsSearchingVehicle(false)
       })
-
   }
 
   return (
-    <SafeAreaView style={[styles.orderContainer, tw`justify-between shadow-lg`]}>
-      <View>
-      <AntDesign name='left' size={28}
-                style={{  position: 'absolute', top: 14, left: 7, zIndex: 2 }}
-                color={'#333'} onPress={() => dispatch(setTabShown('order'))} />
-      </View>
-      <View style={tw`p-3`}>
-        <Text style={tw`text-xl font-bold text-center`}>Confirm your ride</Text>
-        <Image style={styles.testImage} source={{ uri: 'https://i.ibb.co/vjxRvQK/Tesla-Electric-Car-PNG-Free-Download.png' }} />
-        <View style={tw`px-4`}>
-          {/* <FlatList style={tw`px-4`}> */}
-          <View style={tw`flex-row justify-between`}>
-            <Text style={tw`mb-3 text-lg font-semibold`}>Tesla Model S</Text>
+    <View style={[tw`bg-white items-center justify-between`, { width: '100%', height: '92%' }]}>
+      <Text style={[{ height: 35 }, tw`text-3xl font-bold`]}>Confirm order</Text>
+      {!isSearchingVehicle &&
+        <TouchableOpacity style={{ position: 'absolute', top: 8, left: 7, zIndex: 2 }} activeOpacity={0.3}
+          onPress={() => dispatch(setTabShown('order'))}>
+          <AntDesign name='left' size={20} color={'#333'} />
+        </TouchableOpacity>}
+      <Image style={[tw`w-full h-24`, { resizeMode: 'cover' }]} source={{ uri: 'https://i.ibb.co/vjxRvQK/Tesla-Electric-Car-PNG-Free-Download.png' }} />
+      <View style={tw`mb-2`}>
+        <View style={tw`px-4 w-full`}>
+          <View style={tw`items-center`}>
+            <Text style={tw`-mt-2 mb-1 text-lg font-semibold`}>Tesla Model S</Text>
           </View>
-          <View style={tw`flex-row justify-between my-0.5`}>
-            <Text style={tw`text-gray-600`}>Distance</Text>
-            <Text style={tw`text-center pb-2 text-gray-600`}>{milesToKM(travelTimeInformation?.distance?.text)} km</Text>
+          <View style={[tw`flex-row justify-around w-full items-center `]}>
+            <View style={tw`flex-col flex-1 items-center my-0.5 `}>
+              <Text style={tw`text-gray-600 mb-0.5`}>Distance</Text>
+              <Text style={[tw`text-center text-gray-900 font-semibold`, { fontSize: 16 }]}>{milesToKM(travelTimeInformation?.distance?.text)} km</Text>
+            </View>
+            <View style={tw`flex-col flex-1 my-0.5 items-center `}>
+              <Text style={tw`text-gray-600 mb-0.5`}>Duration</Text>
+              <Text style={[tw`text-center text-gray-900 font-semibold`, { fontSize: 16 }]}>{travelTimeInformation?.duration.text}</Text>
+            </View>
+            <View style={tw`flex-col flex-1 my-0.5 items-center `}>
+              <Text style={tw`text-gray-600 mb-0.5`}>Price</Text>
+              <Text style={[tw`text-center text-gray-900 font-semibold`, { fontSize: 16 }]}> {((travelTimeInformation?.duration.value * 1.5) / 300)} ₪</Text>
+            </View>
           </View>
-          <View style={tw`flex-row justify-between my-0.5`}>
-            <Text style={tw`text-gray-600`}>Duration</Text>
-            <Text style={tw`text-center pb-2 text-gray-600`}>{travelTimeInformation?.duration.text}</Text>
-          </View>
-          <View style={tw`flex-row justify-between my-0.5`}>
-            <Text style={tw`text-gray-600`}>Price</Text>
-            <Text style={tw`text-gray-600`}> {(travelTimeInformation?.duration.value * 1.5) / 300} ₪
-            </Text>
-          </View>
-          {/* </FlatList> */}
         </View>
       </View>
 
       {!isSearchingVehicle ? <TouchableOpacity activeOpacity={.5} onPress={confirmRide} style={styles.appButtonContainer}>
-        <Text style={styles.appButtonText}>Confirm order</Text>
+        <Text style={[styles.appButtonText]}>Confirm order</Text>
       </TouchableOpacity>
         :
-        <View style={styles.loadOrderContainer}>
-          <Text style={styles.loadingText}>Completing your order</Text>
-          <ActivityIndicator color={'white'} style={tw`mt-1`} />
+        <View style={[styles.appButtonContainer, tw`bg-gray-400`]}>
+          <Text style={[styles.appButtonText]}>Completing your order</Text>
+          <ActivityIndicator color={'white'} style={tw`pl-4`} />
         </View>}
-    </SafeAreaView>
+    </View>
   )
 }
 
@@ -119,13 +118,14 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
   },
   appButtonContainer: {
+    flexDirection: 'row',
     backgroundColor: "#79aee2",
     borderRadius: 15,
     paddingVertical: 16,
     paddingHorizontal: 12,
     marginHorizontal: Platform.OS === "ios" ? 10 : 0,
     marginBottom: Platform.OS === "ios" ? 5 : 0,
-    marginTop: 25,
+    marginTop: 0,
   },
   loadOrderContainer: {
     backgroundColor: "#79aee2",

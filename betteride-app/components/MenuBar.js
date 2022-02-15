@@ -33,8 +33,9 @@ const features = [
 const link = 'Profile Screen'
 
 const MenuBar = ({ openCloseMenuBar }) => {
-    const navigation = useNavigation()
+    const navigation = useNavigation();
     const user = useSelector(selectUserInfo);
+    
     const redirectHandler = (link) => {
         if (link === 'Logout') {
             AsyncStorage.removeItem('Users')
@@ -52,7 +53,7 @@ const MenuBar = ({ openCloseMenuBar }) => {
                         <View style={[tw`h-40 w-40 rounded-full`, styles.profilePicture]}>
                             <Image style={tw`h-40 w-40 rounded-full`} source={{ uri: user?.photoUrl }} />
                         </View>
-                        <Text style={tw`font-bold text-lg mt-2`}>{user?.firstName} {user?.lastName}</Text>
+                        <Text style={tw`font-bold text-lg mt-2`}>{user?.givenName} {user?.familyName}</Text>
                         <Text style={tw`text-gray-600 mb-5`}>{user?.email}</Text>
                         <View style={[tw`bg-gray-300 rounded-full`, { height: 0.8, width: '80%' }]} />
                     </TouchableOpacity>

@@ -15,11 +15,8 @@ import ProfileScreen from "./screens/ProfileScreen";
 import CreditCardScreen from "./screens/CreditCardScreen";
 import LoadingScreen from "./screens/LoadingScreen";
 
-
-
 export default function App() {
   const Stack = createSharedElementStackNavigator();
-
 
   return (
     <Provider store={store}>

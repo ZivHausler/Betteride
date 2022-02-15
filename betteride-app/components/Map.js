@@ -1,25 +1,25 @@
 import React, { useRef, useEffect, useState } from "react";
-import { StyleSheet, Text, View, Image } from "react-native";
+import { StyleSheet, View, Image } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import tw from "tailwind-react-native-classnames";
-import { selectCurrentLocation, selectDestination, selectOrigin, selectRouteShown, selectUserAssignedVehicle, setDestination, setOrigin, setTravelTimeInformation, setUserAssignedVehicle } from '../slices/navSlice';
+import { selectDestination, selectOrigin, selectRouteShown, selectUserAssignedVehicle, setTravelTimeInformation } from '../slices/navSlice';
+import { setVehicleLocation } from '../slices/vehicleSlice';
 import { useSelector } from 'react-redux';
 import { GOOGLE_MAPS_APIKEY } from '@env';
 import { useDispatch } from 'react-redux';
 import RenderRoute from "./RenderRoute";
-import VehicleMarkers from "./VehicleMarkers";
-import { getDatabase, child, ref, get, onValue } from 'firebase/database';
+import { getDatabase, ref, onValue } from 'firebase/database';
 import { selectUserLocation } from "../slices/userSlice";
 
 const Map = () => {
+  const dispatch = useDispatch();
   const origin = useSelector(selectOrigin);
   const destination = useSelector(selectDestination);
   const userLocation = useSelector(selectUserLocation);
   const routeShown = useSelector(selectRouteShown);
   const userAssignedVehicle = useSelector(selectUserAssignedVehicle);
-  const [vehicleLocation, setVehicleLocation] = useState(null);
+  const [vehicleCurrentLocation, setVehicleCurrentLocation] = useState(null);
   const mapRef = useRef(null);
-  const dispatch = useDispatch();
   const [showLocation, setShowLocation] = useState({
     latitude: 32.690918, // atlit lat
     longitude: 34.942981, // atlit lng
@@ -28,21 +28,20 @@ const Map = () => {
   });
 
   useEffect(() => {
-    if (userLocation){
-        setShowLocation({
-          latitude: userLocation.coords.latitude, 
-          longitude: userLocation.coords.longitude,
-          latitudeDelta: 0.5,
-          longitudeDelta: 0.5,
-        })
+    if (userLocation) {
+      setShowLocation({
+        latitude: userLocation.coords.latitude,
+        longitude: userLocation.coords.longitude,
+        latitudeDelta: 0.5,
+        longitudeDelta: 0.5,
+      })
     }
   }, [userLocation])
-
 
   useEffect(() => {
     if (!userAssignedVehicle) return;
     onValue(ref(getDatabase(), `vehicles/${userAssignedVehicle}/currentLocation/`), (snapshot) => {
-      setVehicleLocation(snapshot.val());
+      setVehicleCurrentLocation(snapshot.val());
       setShowLocation({
         latitude: snapshot.val().location.lat,
         longitude: snapshot.val().location.lng,
@@ -95,8 +94,8 @@ const Map = () => {
         region={showLocation}>
         {routeShown === 'userToDestination' && origin && destination &&
           <RenderRoute origin={origin} destination={destination} color={'#0088ff'} />}
-        {routeShown === 'vehicleToUser' && origin && vehicleLocation &&
-          <RenderRoute origin={vehicleLocation} destination={origin} color={'green'} />}
+        {routeShown === 'vehicleToUser' && origin && vehicleCurrentLocation &&
+          <RenderRoute origin={vehicleCurrentLocation} destination={origin} color={'green'} />}
         {origin && !destination && <Marker coordinate={{
           latitude: origin.location.lat,
           longitude: origin.location.lng,
@@ -113,10 +112,10 @@ const Map = () => {
           identifier="destination" />}
 
         {/* assigned vehicle marker */}
-        {vehicleLocation != null && <Marker
+        {vehicleCurrentLocation != null && <Marker
           coordinate={{
-            latitude: vehicleLocation.location.lat,
-            longitude: vehicleLocation.location.lng,
+            latitude: vehicleCurrentLocation.location.lat,
+            longitude: vehicleCurrentLocation.location.lng,
           }}
         >
           <Image style={{ height: 35, width: 35 }} source={{ uri: 'https://i.ibb.co/kSx3LW6/Red.png' }} />
