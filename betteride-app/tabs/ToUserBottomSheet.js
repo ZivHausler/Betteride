@@ -10,11 +10,14 @@ import ArrivedToUser from "../tabs/ArrivedToUser";
 import ArrivedToDestination from "../tabs/ArrivedToDestination";
 import VehicleLocation from './VehicleLocation';
 import WithUser from "../tabs/WithUser";
-import { selectTabShown, setTabShown } from '../slices/navSlice';
+import { selectTabShown, setClearGoogleInputs, setRouteShown, setTabShown } from '../slices/navSlice';
 import { useDispatch } from "react-redux";
 import { setOrigin, setDestination } from '../slices/navSlice';
+import Map from '../components/Map';
+import { setVehicleLocation } from '../slices/vehicleSlice';
 
 const width = Dimensions.get('window').width;
+//create your forceUpdate hook
 
 const ToUserBottomSheet = () => {
   const dispatch = useDispatch();
@@ -25,6 +28,11 @@ const ToUserBottomSheet = () => {
     switch (tabShown) {
       case 'order':
         index = 0;
+        dispatch(setClearGoogleInputs(true));
+        dispatch(setOrigin(null));
+        dispatch(setDestination(null));
+        dispatch(setRouteShown('userToDestination'))
+        dispatch(setVehicleLocation(null))
         break;
       case 'confirm':
         index = 1;
@@ -80,7 +88,7 @@ const ToUserBottomSheet = () => {
           <FlatList style={{}}
             keyboardShouldPersistTaps='handled'
             ref={listRef}
-            data={[<OrderRide key={0} />, <ConfirmOrder key={1} />, <FulfilledOrder key={2} />, <VehicleLocation key={3}/>, <ArrivedToUser key={4} />, <WithUser key={5} />, <ArrivedToDestination key={6} />]}
+            data={[<OrderRide key={0} />, <ConfirmOrder key={1} />, <FulfilledOrder key={2} />, <VehicleLocation key={3} />, <ArrivedToUser key={4} />, <WithUser key={5} />, <ArrivedToDestination key={6} />]}
             keyExtractor={item => item.key}
             horizontal
             pagingEnabled={true}

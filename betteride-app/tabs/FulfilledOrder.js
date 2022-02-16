@@ -1,42 +1,107 @@
-import { useNavigation } from '@react-navigation/native'
-import React, { useEffect } from 'react'
-import { Animated, StyleSheet, Text, TouchableOpacity, View, } from 'react-native'
-import { Icon } from 'react-native-elements'
-import { useSelector } from 'react-redux'
+import React, { useEffect, useState } from 'react'
+import { Animated, StyleSheet, Text, TouchableOpacity, View, Modal } from 'react-native'
+import { useDispatch, useSelector } from 'react-redux'
 import tw from 'tailwind-react-native-classnames'
-import { selectTabShown, selectTravelTimeInformation } from '../slices/navSlice'
-import { useDispatch } from "react-redux";
-import { setTabShown } from '../slices/navSlice'
 import { Platform } from 'react-native'
+import { selectVehicleETA, selectVehicleKMLeft, selectVehicleLocation, selectVehicleTimeLeft, setVehicleLocation } from '../slices/vehicleSlice'
+import { selectUserAssignedVehicle, setDestination, setOrigin, setRouteShown, setTabShown, setUserAssignedVehicle } from '../slices/navSlice'
+import { IP_ADDRESS } from "@env";
+import { selectUserInfo, } from '../slices/userSlice'
+
 
 const FulfilledOrder = () => {
+    const vehicleLocation = useSelector(selectVehicleLocation);
+    const [modalVisible, setModalVisible] = useState(false);
+    const userData = useSelector(selectUserInfo);
+    const userAssignedVehicle = useSelector(selectUserAssignedVehicle);
     const dispatch = useDispatch();
-    const tabShown = useSelector(selectTabShown)
-    const navigation = useNavigation();
-    const travelTimeInformation = useSelector(selectTravelTimeInformation);
+    const vehicleEta = useSelector(selectVehicleETA);
+    const vehicleKMLeft = useSelector(selectVehicleKMLeft);
+    const vehicleTimeLeft = useSelector(selectVehicleTimeLeft);
 
-    useEffect(() => {
-        if (tabShown !== 'fulfilled') return;
-        setTimeout(() => { skipNext() }, 3000);
-    }, [tabShown])
 
-    const skipNext = () => { dispatch(setTabShown('vehicle_location')); }
+    const cancelTrip = async () =>{
+
+        setModalVisible(false);
+
+        let response = await fetch(`http://${IP_ADDRESS}:3000/finishTrip?userID=${userData.id}&plateNumber=${userAssignedVehicle}`, {
+            method: "PUT",
+        })
+        //reset all fields
+        dispatch(setOrigin(null));
+        dispatch(setDestination(null));
+        dispatch(setRouteShown('userToDestination'));
+        dispatch(setUserAssignedVehicle(null));
+        dispatch(setVehicleLocation(null));
+        dispatch(setTabShown('order'));
+    }
 
     return (
         <Animated.View style={[tw`bg-white items-center justify-between`, { width: '100%', height: '92%' }]}>
-            <Text style={[{ height: 35 }, tw`text-3xl font-bold`]}>Order fulfilled</Text>
-            <Text style={[tw`absolute bottom-14`, { left: '20%', fontSize: 36 }]}>🎉</Text>
-            <Text style={[tw`absolute bottom-0`, { right: '20%', fontSize: 36, transform: [{ translateX: 8 }] }]}>🥳</Text>
-            <View style={tw`px-3 items-center w-full`}>
+            <View style={styles.centeredView}>
+                <Modal
+                    animationType="slide"
+                    transparent={true}
+                    visible={modalVisible}
+                >
+                    <View style={styles.centeredView}>
+                        <View style={styles.modalView}>
+                            <Text style={[tw`font-bold text-lg`, styles.modalText]}>Are you sure?</Text>
+                            <Text style={[tw``, styles.modalText]}>Be aware you will be charged for half the fare</Text>
+                            <View style={tw`flex-row`}>
+                                <TouchableOpacity
+                                    style={[tw`bg-red-400 flex-1 p-2 m-2 rounded-xl shadow-sm`]}
+                                    onPress={() => cancelTrip()}
+                                >
+                                    <Text style={styles.textStyle}>Cancel Trip</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[tw`bg-green-400 flex-1 p-2 m-2 rounded-xl shadow-sm`,]}
+                                    onPress={() => setModalVisible(false)}
+                                >
+                                    <Text style={styles.textStyle}>Continue Trip</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+                </Modal>
+            </View>
+            <Text style={[{ height: 35 }, tw` text-3xl font-bold`]}>Order fulfilled</Text>
+            <View style={[tw` h-2/3 justify-around`]}>
                 <Text style={[tw`text-blue-400 font-bold mb-1 text-center`, { fontSize: 16 }]}>Your order has been successfully registered</Text>
-                <View style={tw`justify-center items-center my-1 w-full`}>
-                    <Text style={[tw`text-center my-1`, { fontSize: 16 }]}>The estimated time of arrival of the vehicle is 15 minutes and will arrive at 10:15</Text>
+                <View style={tw`items-center`}>
+                    <Text style={tw`text-gray-600 mb-0.5 `}>
+                        Vehicle current location
+                    </Text>
+                    <Text style={[tw`text-center text-gray-900 font-semibold`, { fontSize: 18 }]}>
+                        {vehicleLocation?.address}
+                    </Text>
+                </View>
+                <View style={tw`flex-row items-center my-0.5 justify-around`}>
+                    <View style={tw`items-center  flex-1 justify-between`}>
+                        <Text style={tw`text-gray-600 mb-0.5`}>
+                            Time left
+                        </Text>
+                        <Text style={[tw`text-center text-gray-900 font-semibold`, { fontSize: 16 }]}>
+                            {vehicleTimeLeft ? (vehicleTimeLeft/60).toFixed(0) + ' min' : 'calculating'} 
+                        </Text>
+                    </View>
+                    <View style={tw`flex-col flex-1 items-center my-0.5 `}>
+                        <Text style={tw`text-gray-600 mb-0.5`}>ETA</Text>
+                        <Text style={[tw`text-center text-gray-900 font-semibold`, { fontSize: 22 }]}>{vehicleEta ? vehicleEta.split(' ')[1].split(':').slice(0, 2).join(':') : 'calculating'}</Text>
+                    </View>
+                    <View style={tw`items-center flex-1 justify-between`}>
+                        <Text style={tw`text-gray-600 mb-0.5`}>
+                            KM left
+                        </Text>
+                        <Text style={[tw`text-center text-gray-900 font-semibold`, { fontSize: 16 }]}>
+                            {vehicleKMLeft ? (vehicleKMLeft/1000).toFixed(2) : 'calculating'}
+                        </Text>
+                    </View>
                 </View>
             </View>
-            <TouchableOpacity onPress={() => skipNext()} style={tw` justify-around items-center px-4 mt-5`} activeOpacity={1}>
-                <View style={tw`p-1 h-20 w-20 bg-green-300 rounded-full shadow-md justify-center items-center my-2`}>
-                    <Icon name="done" type="material" color={'green'} size={64} />
-                </View>
+            <TouchableOpacity onPress={() => setModalVisible(true)} activeOpacity={0.7} style={tw`p-3 bg-gray-800  rounded-xl shadow-sm`}>
+                <Text style={tw`text-white font-bold`}>CANCEL TRIP</Text>
             </TouchableOpacity>
         </Animated.View >
     )
@@ -45,6 +110,47 @@ const FulfilledOrder = () => {
 export default FulfilledOrder
 
 const styles = StyleSheet.create({
+    centeredView: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        marginTop: 22
+    },
+    modalView: {
+        margin: 20,
+        backgroundColor: "white",
+        borderRadius: 20,
+        padding: 35,
+        alignItems: "center",
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 2
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        elevation: 5
+    },
+    button: {
+        borderRadius: 20,
+        padding: 10,
+        elevation: 2
+    },
+    buttonOpen: {
+        backgroundColor: "#F194FF",
+    },
+    buttonClose: {
+        backgroundColor: "#2196F3",
+    },
+    textStyle: {
+        color: "white",
+        fontWeight: "bold",
+        textAlign: "center"
+    },
+    modalText: {
+        marginBottom: 15,
+        textAlign: "center"
+    },
     orderContainer: {
         position: 'absolute',
         bottom: Platform.OS === "ios" ? 30 : 20,

@@ -8,6 +8,8 @@ const serviceAccount = require("./permissions.json");
 const jsonParser = bodyParser.json({ limit: '10mb', extended: true });
 const googleMapsKey = "AIzaSyB9mAs9XA7wtN9RdKMKRig7wlHBfUtjt1g";
 const { Expo } = require('expo-server-sdk')
+const IP_ADDRESS = "10.100.102.233"; // Daniel -> 10.100.102.233 // ZIV-> 10.0.0.8
+
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
@@ -25,10 +27,13 @@ app.listen(3000, async () => {
 // POST CALLS
 app.post("/pushRouteToVehicle", jsonParser, async (req, res) => {
   const { plateNumber, route, type } = req.body;
+  route['eta'] = new Date(new Date().getTime() + route.duration.value*1000).toLocaleString('en-US', {  hour12: false });
+  route['index'] = 0;
   db.ref("vehicles").child(plateNumber).child("route").set(route);
   db.ref("vehicles").child(plateNumber).child("state").set({ type, assigned: route.user_id });
   res.sendStatus(200);
 });
+
 app.post("/loginUser", jsonParser, async (req, res) => {
   const { user } = req.body;
   db.ref("users").child(user.id).once("value", (snapshot) => {
@@ -53,23 +58,26 @@ app.put("/finishTrip", async (req, res) => {
   const { plateNumber, userID } = req.query;
   try {
     //save trip to history
-    vehicleRef.child(plateNumber).child('route').once("value", (vehicleSnapshot) => {
+    await vehicleRef.child(plateNumber).child('route').once("value", (vehicleSnapshot) => {
       usersRef.child(userID).child('travelHistory').once("value", (userSnapshot) => {
         let tempArray = [];
         if (userSnapshot.val()) {
           tempArray = [...userSnapshot.val()];
         }
         let tempTrip = vehicleSnapshot.val();
+        if (tempTrip?.user_id != undefined)
+          tempTrip.user_id = null;
         tempTrip['plateNumber'] = plateNumber;
+        tempTrip['date'] = new Date().toUTCString();
         tempArray.push(tempTrip);
         usersRef.child(userID).child('travelHistory').set(tempArray);
       })
     })
 
     // reseting the states
-    usersRef.child(userID).child('trip').set(null);
-    vehicleRef.child(plateNumber).child('route').set(null);
-    vehicleRef.child(plateNumber).child('state').set(null)
+    await usersRef.child(userID).child('trip').set(null);
+    await vehicleRef.child(plateNumber).child('route').set(null);
+    await vehicleRef.child(plateNumber).child('state').set(null)
     res.send("OK").status(200)
   }
   catch (e) {
@@ -128,6 +136,7 @@ app.put("/reassignVehiclesToUsers", jsonParser, async (req, res) => {
 });
 
 // GET CALLS
+
 app.get("/getVehicles", async (req, res) => {
   db.ref("vehicles").once("value", (snapshot) => {
     res.send(snapshot.val());
@@ -157,6 +166,13 @@ app.get("/api/getRoute", async (req, res) => {
     .then((response) => res.status(200).send(response.data))
     .catch((err) => console.log(err));
 });
+
+app.get('/getUserHistory', async (req, res) => {
+  db.ref('users').child(req.query.userID).child('travelHistory').once('value', snapshot => {
+    res.status(200).send(JSON.stringify(snapshot.val()));
+  });
+})
+
 app.get('/getVehicleCurrentRoute', async (req, res) => {
   db.ref('vehicles').child(req.query.plateNumber).child('route').once('value', snapshot => {
     const object = {
@@ -194,13 +210,13 @@ const getDirections = async (from, to) => {
     .catch((error) => console.log("error"));
 };
 // demo vehicle 
-const demoSpeed = 100 // how fast the car will rerender to the map
+const demoSpeed = 1 // how fast the car will rerender to the map
 const vehicleRef = db.ref("vehicles");
 const usersRef = db.ref('users');
 
 const addDemoVehicleListener = (vehicle) => {
-  vehicleRef.child(vehicle.plateNumber).child('route').on('value', function (dataSnapshot) {
-    if (!dataSnapshot.val()) return;
+  vehicleRef.child(vehicle.plateNumber).child('route').child('index').on('value', function (dataSnapshot) {
+    if (dataSnapshot.val() == null) return;
     vehicleRef.child(vehicle.plateNumber).once("value", snapshot => {
       demoVehicle(snapshot.val())
     })
@@ -227,37 +243,65 @@ const demoVehicle = async (vehicle) => {
   // continue from last point (index)
   let i = 0;
   if (vehicle.route.index) i = vehicle.route.index.step;
-
-  if (i < vehicle.route.steps.length) {
+  console.log(vehicle.plateNumber + " with index = " + i)
+  if (i < vehicle.route?.steps?.length) {
     // creating delay
     await delay(vehicle.route.steps[i].duration.value * 1000 / demoSpeed);
     // moving the vehicle to the next step
     await vehicleRef.child(vehicle.plateNumber).child('currentLocation').child('location').set({ lat: vehicle.route.steps[i].start_location.lat, lng: vehicle.route.steps[i].start_location.lng });
+    let newVehicleAddress = await translateCordsToAddress({ lat: vehicle.route.steps[i].start_location.lat, lng: vehicle.route.steps[i].start_location.lng });
+
+    const { kmLeft, timeLeft } = await calcETAAndKMLeft(vehicle.plateNumber, i);
+    await vehicleRef.child(vehicle.plateNumber).child('route').child('km_left').set(kmLeft);
+    await vehicleRef.child(vehicle.plateNumber).child('route').child('time_left').set(timeLeft);
+    await vehicleRef.child(vehicle.plateNumber).child('currentLocation').child('address').set(newVehicleAddress);
     await vehicleRef.child(vehicle.plateNumber).child('route').child('index').set({ step: ++i });
   }
   //vehice has arrived to his destination
   else {
     // now we need to update his address and location to the trip end point
-    vehicleRef.child(vehicle.plateNumber).child('currentLocation').set({ address: vehicle.route.end_address, location: { lat: vehicle.route.end_location.lat, lng: vehicle.route.end_location.lng } });
+    await vehicleRef.child(vehicle.plateNumber).child('currentLocation').set({ address: vehicle.route.end_address, location: { lat: vehicle.route.end_location.lat, lng: vehicle.route.end_location.lng } });
 
     await sendMessageToUser(vehicle.plateNumber, vehicle.state.assigned, vehicle.state.type);
 
     if (vehicle.state.type === 'TOWARDS_USER') {
-      console.log("STATE = TOWRARDS_VEHICLE")
-      usersRef.child(vehicle.state.assigned).child('trip').child('state').child("type").set('TOWARDS_VEHICLE');
-      vehicleRef.child(vehicle.plateNumber).child('route').set(null);
-      vehicleRef.child(vehicle.plateNumber).child('state').child('type').set('WAITING_FOR_USER');
+      await usersRef.child(vehicle.state.assigned).child('trip').child('state').child("type").set('TOWARDS_VEHICLE');
+      await vehicleRef.child(vehicle.plateNumber).child('route').set(null);
+      await vehicleRef.child(vehicle.plateNumber).child('state').child('type').set('WAITING_FOR_USER');
     }
     else if (vehicle.state.type === 'WITH_USER') {
       // implement data saving to history
-
-      usersRef.child(vehicle.state.assigned).child('trip').child('state').child("type").set('WAIT_TO_EXIT');
-      vehicleRef.child(vehicle.plateNumber).child('state').child('type').set('WAIT_USER_EXIT');
-
+      await usersRef.child(vehicle.state.assigned).child('trip').child('state').child("type").set('WAIT_TO_EXIT');
+      await vehicleRef.child(vehicle.plateNumber).child('state').child('type').set('WAIT_USER_EXIT');
     }
   }
 }
+const calcETAAndKMLeft = async (plateNumber, index) => {
+  // get the last time - current index time
+  let timeLeft = 0;
+  let kmLeft = 0;
+  await vehicleRef.child(plateNumber).child('route').child('steps').once('value', snapshot => {
+    if (snapshot.val()?.length != undefined && snapshot.val()?.length > 0)
+      for (let i = index; i < snapshot.val()?.length; i++) {
+        timeLeft += snapshot.val()[i].duration.value;
+        kmLeft += snapshot.val()[i].distance.value;
+      }
+  });
+  return { timeLeft, kmLeft };
+}
 
+
+const translateCordsToAddress = async (coords) => {
+  let address = await axios.get(`http://${IP_ADDRESS}:3001/api/translateCordsToAddress?lat=${coords.lat}&lng=${coords.lng}`, {
+    method: 'GET',
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+  })
+    .then(response => response.data)
+    .catch((error) => {
+      console.log('error at firebase - translateCordsToAddress', error);
+    })
+  return address
+}
 const sendMessageToUser = async (plateNumber, userID, type) => {
   // create the message to send to the user that the vehicle has arrived and will be waiting for him.
   let message;
@@ -266,7 +310,7 @@ const sendMessageToUser = async (plateNumber, userID, type) => {
     message = {
       to: userSnapshot.val().token,
       sound: 'default',
-      title: type === 'TOWARDS_USER' ? `${userSnapshot.val().givenName}, Your vehicle has arrived` : `${userSnapshot.val().familyName}, You have arrived to your destination!`,
+      title: type === 'TOWARDS_USER' ? `${userSnapshot.val().givenName}, Your vehicle has arrived` : `${userSnapshot.val().givenName}, You have arrived to your destination!`,
       body: type === 'TOWARDS_USER' ? `It's plate number is ${plateNumber}` : `Please step out from the vehicle`,
       data: { type },
     }

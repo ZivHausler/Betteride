@@ -11,6 +11,7 @@ import Intl from 'intl/lib/core'
 import { Platform } from 'react-native'
 import { IP_ADDRESS } from "@env";
 import { selectUserInfo } from '../slices/userSlice'
+import { setVehicleLocation } from '../slices/vehicleSlice'
 
 const ArrivedToDestination = () => {
     const dispatch = useDispatch();
@@ -27,10 +28,12 @@ const ArrivedToDestination = () => {
             method: "PUT",
         })
         // clear data -
-        dispatch(setRouteShown(null))
-        dispatch(setOrigin(null))
-        dispatch(setDestination(null))
-        dispatch(setTabShown('order'))
+        dispatch(setOrigin(null));
+        dispatch(setDestination(null));
+        dispatch(setRouteShown('userToDestination'));
+        dispatch(setUserAssignedVehicle(null));
+        dispatch(setVehicleLocation(null));
+        dispatch(setTabShown('order'));
     }
 
     return (

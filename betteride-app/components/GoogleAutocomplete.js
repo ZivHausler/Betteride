@@ -1,16 +1,29 @@
-import React from 'react'
+import React, { useRef, useEffect } from 'react'
 import { StyleSheet, Text, View, KeyboardAvoidingView } from 'react-native'
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete'
 import tw from 'tailwind-react-native-classnames'
 import { GOOGLE_MAPS_APIKEY } from '@env'
 import { abs } from 'react-native-reanimated'
+import { useDispatch, useSelector } from 'react-redux'
+import { selectClearGoogleInputs, setClearGoogleInputs } from '../slices/navSlice'
 
 const GoogleAutocomplete = ({ validateRoute, text, dataType }) => {
+    const ref = useRef();
+    const clearGoogleInputs = useSelector(selectClearGoogleInputs);
+    const dispatch = useDispatch();
 
+    useEffect(() => {
+        if (clearGoogleInputs)
+        {
+            ref.current?.clear();
+            dispatch(setClearGoogleInputs(false));
+        }
+    }, [clearGoogleInputs]);
+    
     return (
         <View style={tw`my-2`}>
             <Text style={styles.orderAction}>{text[0]}</Text>
-            <GooglePlacesAutocomplete placeholder={text[1]} minLength={2} nearbyPlacesAPI='GooglePlacesSearch' debounce={400}
+            <GooglePlacesAutocomplete ref={ref} placeholder={text[1]} minLength={2} nearbyPlacesAPI='GooglePlacesSearch' debounce={400}
                 styles={toInputBoxStyles} enablePoweredByContainer={false} query={{ key: GOOGLE_MAPS_APIKEY, language: 'en', components: 'country:il' }}
                 returnKeyType={'search'} fetchDetails={true} onPress={(data, details = null) => {
                     validateRoute(dataType, {
@@ -21,6 +34,7 @@ const GoogleAutocomplete = ({ validateRoute, text, dataType }) => {
         </View>
     )
 }
+
 
 export default GoogleAutocomplete
 

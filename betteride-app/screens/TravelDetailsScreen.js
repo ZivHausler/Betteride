@@ -15,12 +15,69 @@ const ITEM_HEIGHT = height * 0.18;
 const SPACING = 10;
 const TOP_HEADER_HEIGHT = height * 0.3;
 const DURATION = 1000;
-const fakePhoneNumber = faker.phone.phoneNumber().split(' ')[0];
 
-const TravelDetailsScreen = ({ navigation, route }) => {
+const TravelDetailsScreen = ({ navigation, route,index }) => {
+
     const { item } = route.params;
 
     const opacity = useRef(new Animated.Value(0)).current;
+
+    const categories = [
+        {
+            key: faker.datatype.uuid(),
+            title: 'Trip information:',
+            info: [
+                {
+                    title: 'Trip length:  ',
+                    text: faker.datatype.number() % 40 + ' km',
+                },
+                {
+                    title: 'Trip time:  ',
+                    text: faker.datatype.number() % 60 + 5 + ' minutes',
+                },
+                {
+                    title: 'Price:  ',
+                    text: faker.commerce.price() % 100 + ' ₪',
+                },
+                {
+                    title: 'Battery used:  ',
+                    text: faker.datatype.number() + ' mA',
+                },
+            ]
+        },
+        {
+            key: faker.datatype.uuid(),
+            title: 'Vehicle information:',
+            info: [
+                {
+                    title: 'Name:  ',
+                    text: faker.vehicle.vehicle(),
+                },
+                {
+                    title: 'Manufecturer:  ',
+                    text: faker.vehicle.manufacturer(),
+                },
+                {
+                    title: 'Model:  ',
+                    text: faker.vehicle.model(),
+                },
+                {
+                    title: 'Color:  ',
+                    text: faker.vehicle.color(),
+                },
+            ]
+        },
+        {
+            key: faker.datatype.uuid(),
+            title: 'General information:',
+            info: [
+                {
+                    title: 'Arrived in time?  ',
+                    text: faker.datatype.boolean() ? 'Yes' : 'No',
+                },
+            ]
+        },
+    ]
 
     useEffect(() => {
         Animated.timing(opacity, {
@@ -43,7 +100,7 @@ const TravelDetailsScreen = ({ navigation, route }) => {
                 style={{ padding: 12, position: 'absolute', top: SPACING * 4, left: SPACING, zIndex: 2 }}
                 color={'#333'} onPress={() => navigation.goBack()} />
 
-            <SharedElement id={`item.${item.key}.bg`}>
+            <SharedElement id={`item.${index}.bg`}>
                 <LinearGradient style={[StyleSheet.absoluteFillObject, { height: height / 2 }]}
                     start={[1, 1]} end={[0, 0]}
                     colors={item.color}
@@ -54,11 +111,10 @@ const TravelDetailsScreen = ({ navigation, route }) => {
                 <View style={[{ height: TOP_HEADER_HEIGHT }, tw`flex-row mt-5`]}>
                     {/* Vehicle's image */}
                     <View style={[{ width: '50%', }, tw`h-full items-center justify-center`]}>
-                        <SharedElement id={`item.${item.key}.image`}>
+                        <SharedElement id={`item.${index}.image`}>
                             <Image style={[{ width: 180, height: 162, resizeMode: 'contain' }, tw``]} source={{ uri: 'https://links.papareact.com/3pn' }} />
                         </SharedElement>
                     </View>
-                    {/* Ride's flat information */}
                     <Animated.View style={[{ width: '60%', opacity }, tw`justify-center`]}>
                         <View style={{ width: '75%', marginBottom: 4 }}>
                             <Text style={tw`font-bold`}>Date & Time:</Text>
@@ -66,28 +122,19 @@ const TravelDetailsScreen = ({ navigation, route }) => {
                         </View>
                         <View style={{ width: '75%', marginBottom: 4 }}>
                             <Text style={tw`font-bold`}>Origin:</Text>
-                            <Text style={[tw`pl-3`]}>{item.from}</Text>
+                            <Text style={[tw`pl-3`]}>{item.start_address}</Text>
                         </View>
                         <View style={{ width: '75%', marginBottom: 4 }}>
                             <Text style={tw`font-bold`}>Destination:</Text>
-                            <Text style={[tw`pl-3`]}>{item.to}</Text>
+                            <Text style={[tw`pl-3`]}>{item.end_address}</Text>
                         </View>
                     </Animated.View>
                 </View>
             </View>
             <SharedElement id={'general.bg'}>
-                <View style={styles.bg}>
+                <View style={[, styles.bg]}>
                     <ScrollView>
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-evenly', marginVertical: SPACING, marginBottom: SPACING + 5 }}>
-                            {detailsIcons.map((detail, index) => {
-                                // Three icons in the bottom sheet
-                                return <Animatable.View animation={'bounceIn'} delay={DURATION - 200 + index * 50} key={`${detail.icon} -${index} `}
-                                    style={{ backgroundColor: detail.color, height: 64, width: 64, borderRadius: 100, alignItems: 'center', justifyContent: 'center' }}>
-                                    <AntDesign name={detail.icon} size={22} color={'#333'} />
-                                </Animatable.View>
-                            })}
-                        </View>
-                        <View >
+                        <View style={tw`pt-5`} >
                             {item.categories.map((category, index) => {
                                 // Render the details for each category
                                 return <Animatable.View key={category.key} animation={'fadeInUp'}
@@ -112,7 +159,7 @@ const TravelDetailsScreen = ({ navigation, route }) => {
                                     <Text style={tw`text-center text-gray-500`}>email: betteride_support@gmail.com</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity onPress={() => Linking.openURL('tel:' + fakePhoneNumber)}>
-                                    <Text style={tw`text-center text-gray-500`}>phone: {fakePhoneNumber}</Text>
+                                    <Text style={tw`text-center text-gray-500`}>phone: +972-545-76504</Text>
                                 </TouchableOpacity>
                             </Animatable.View>
                         </View>
@@ -171,19 +218,10 @@ TravelDetailsScreen.sharedElements = (route) => {
     const { item } = route.params;
     return [
         {
-            id: `item.${item.key}.bg`,
+            id: `item.${index}.bg`,
         },
-        // {
-        //     id: `item.${item.key}.date`,
-        // },
-        // {
-        //     id: `item.${item.key}.origin`,
-        // },
-        // {
-        //     id: `item.${item.key}.destination`,
-        // },
         {
-            id: `item.${item.key}.image`,
+            id: `item.${index}.image`,
         },
         {
             id: `general.bg`,

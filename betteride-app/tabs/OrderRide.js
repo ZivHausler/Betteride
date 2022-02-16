@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react'
-import { StyleSheet, Text, View, SafeAreaView, TouchableOpacity, Button } from 'react-native'
+import React, { useCallback,useState, useEffect,useRef } from 'react'
+import { StyleSheet, Text, View, SafeAreaView, TouchableOpacity, Button, Pressable } from 'react-native'
 import tw from 'tailwind-react-native-classnames';
 import GoogleAutocomplete from "../components/GoogleAutocomplete";
 import { selectDestination, selectOrigin, selectRouteShown, selectTabShown, setDestination, setOrigin, setTabShown, setRouteShown } from '../slices/navSlice'
@@ -15,6 +15,10 @@ const OrderRide = () => {
     const origin = useSelector(selectOrigin);
     const destination = useSelector(selectDestination);
     const [isRouteValid, setIsRouteValid] = useState(false);
+    const originInputRef = useRef();
+    const destinationInputRef = useRef();
+
+   
 
     const findRide = () => {
         if (!origin && !destination) {
@@ -56,6 +60,7 @@ const OrderRide = () => {
             dispatch(setOrigin(object))
         else dispatch(setDestination(object))
     }
+    
     useEffect(() => {
         if (origin && destination)
             setIsRouteValid(true);
@@ -77,7 +82,7 @@ const OrderRide = () => {
             </View>
             <View style={tw`h-14`}>
                 {isRouteValid &&
-                    <Animatable.View style={tw``} animation={'fadeInUp'} delay={0}>
+                    <Animatable.View style={tw``} animation={'bounceIn'} delay={0}>
                         <TouchableOpacity disabled={!isRouteValid} activeOpacity={.5} onPress={findRide} style={[{
                             backgroundColor: "#79aee2", borderRadius: 15, paddingVertical: 16, paddingHorizontal: 12
                         }, tw`${isRouteValid ? null : 'bg-gray-300'}`]}>
@@ -85,6 +90,7 @@ const OrderRide = () => {
                         </TouchableOpacity>
                     </Animatable.View>}
             </View>
+                        
         </View>
     )
 }

@@ -8,6 +8,7 @@ const initialState = {
   tabShown: 'order',
   routeShown: 'userToDestination',
   userAssignedVehicle: null,
+  clearGoogleInputs: null
 };
 
 export const navSlice = createSlice({
@@ -22,11 +23,11 @@ export const navSlice = createSlice({
     setTabShown: (state, action) => void (state.tabShown = action.payload),
     setRouteShown: (state, action) => void (state.routeShown = action.payload),
     setUserAssignedVehicle: (state, action) => void (state.userAssignedVehicle = action.payload),
+    setClearGoogleInputs: (state,action) => void (state.clearGoogleInputs = action.payload),
   },
 });
 
-export const { currentLocation, setOrigin, setDestination, setTravelTimeInformation, setTabShown, setRouteShown, setUserAssignedVehicle } =
-  navSlice.actions;
+export const { currentLocation, setOrigin, setDestination, setTravelTimeInformation, setTabShown, setRouteShown, setUserAssignedVehicle, setClearGoogleInputs } = navSlice.actions;
 
 // ----- Selectors: ----- //
 export const selectCurrentLocation = (state) => state.nav.currentLocation;
@@ -37,6 +38,7 @@ export const selectTravelTimeInformation = (state) =>
 export const selectTabShown = (state) => state.nav.tabShown;
 export const selectRouteShown = (state) => state.nav.routeShown;
 export const selectUserAssignedVehicle = (state) => state.nav.userAssignedVehicle;
+export const selectClearGoogleInputs = (state) => state.nav.clearGoogleInputs;
 
 export default navSlice.reducer;
 

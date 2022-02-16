@@ -3,13 +3,14 @@ import { StyleSheet, View, Image } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import tw from "tailwind-react-native-classnames";
 import { selectDestination, selectOrigin, selectRouteShown, selectUserAssignedVehicle, setTravelTimeInformation } from '../slices/navSlice';
-import { setVehicleLocation } from '../slices/vehicleSlice';
+import { selectVehicleETA, selectVehicleKMLeft, selectVehicleLocation, selectVehicleTimeLeft, setVehicleETA, setVehicleKMLeft, setVehicleLocation, setVehicleTimeLeft } from '../slices/vehicleSlice';
 import { useSelector } from 'react-redux';
 import { GOOGLE_MAPS_APIKEY } from '@env';
 import { useDispatch } from 'react-redux';
 import RenderRoute from "./RenderRoute";
 import { getDatabase, ref, onValue } from 'firebase/database';
 import { selectUserLocation } from "../slices/userSlice";
+
 
 const Map = () => {
   const dispatch = useDispatch();
@@ -18,7 +19,8 @@ const Map = () => {
   const userLocation = useSelector(selectUserLocation);
   const routeShown = useSelector(selectRouteShown);
   const userAssignedVehicle = useSelector(selectUserAssignedVehicle);
-  const [vehicleCurrentLocation, setVehicleCurrentLocation] = useState(null);
+  const vehicleLocation = useSelector(selectVehicleLocation);
+  
   const mapRef = useRef(null);
   const [showLocation, setShowLocation] = useState({
     latitude: 32.690918, // atlit lat
@@ -40,11 +42,14 @@ const Map = () => {
 
   useEffect(() => {
     if (!userAssignedVehicle) return;
-    onValue(ref(getDatabase(), `vehicles/${userAssignedVehicle}/currentLocation/`), (snapshot) => {
-      setVehicleCurrentLocation(snapshot.val());
+    onValue(ref(getDatabase(), `vehicles/${userAssignedVehicle}`), (snapshot) => {
+      dispatch(setVehicleLocation(snapshot.val().currentLocation))
+      dispatch(setVehicleETA(snapshot.val()?.route?.eta))
+      dispatch(setVehicleKMLeft(snapshot.val()?.route?.km_left))
+      dispatch(setVehicleTimeLeft(snapshot.val()?.route?.time_left))
       setShowLocation({
-        latitude: snapshot.val().location.lat,
-        longitude: snapshot.val().location.lng,
+        latitude: snapshot.val().currentLocation.location.lat,
+        longitude: snapshot.val().currentLocation.location.lng,
         latitudeDelta: 0.005,
         longitudeDelta: 0.005,
       })
@@ -94,8 +99,8 @@ const Map = () => {
         region={showLocation}>
         {routeShown === 'userToDestination' && origin && destination &&
           <RenderRoute origin={origin} destination={destination} color={'#0088ff'} />}
-        {routeShown === 'vehicleToUser' && origin && vehicleCurrentLocation &&
-          <RenderRoute origin={vehicleCurrentLocation} destination={origin} color={'green'} />}
+        {routeShown === 'vehicleToUser' && origin && (vehicleLocation != null) &&
+          <RenderRoute origin={vehicleLocation} destination={origin} color={'green'} />}
         {origin && !destination && <Marker coordinate={{
           latitude: origin.location.lat,
           longitude: origin.location.lng,
@@ -112,10 +117,10 @@ const Map = () => {
           identifier="destination" />}
 
         {/* assigned vehicle marker */}
-        {vehicleCurrentLocation != null && <Marker
+        {(vehicleLocation != null) && <Marker
           coordinate={{
-            latitude: vehicleCurrentLocation.location.lat,
-            longitude: vehicleCurrentLocation.location.lng,
+            latitude: vehicleLocation.location.lat,
+            longitude: vehicleLocation.location.lng,
           }}
         >
           <Image style={{ height: 35, width: 35 }} source={{ uri: 'https://i.ibb.co/kSx3LW6/Red.png' }} />

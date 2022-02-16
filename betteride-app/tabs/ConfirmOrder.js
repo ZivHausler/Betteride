@@ -31,7 +31,6 @@ const ConfirmOrder = () => {
     if (!userData) return;
     // show loading animation
     setIsSearchingVehicle(true)
-    console.log(IP_ADDRESS);
     // then fetch the nearest vehicle
     // then do this VV
     // const baseUrl = Platform.OS === 'android' ? 'http://'+IP_ADDRESS : 'http://localhost';

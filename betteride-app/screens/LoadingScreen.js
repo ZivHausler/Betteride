@@ -68,7 +68,7 @@ const LoadingScreen = ({ navigation, route }) => {
             AsyncStorage.getItem('Users')
                 .then(result => {
                     if (!result) {
-                        setTimeout(() => animateLoginPage(), 2000)
+                        setTimeout(() => animateLoginPage(), 1)
                     }
                     else {
                         let user = JSON.parse(result).user;
@@ -94,14 +94,38 @@ const LoadingScreen = ({ navigation, route }) => {
                                         dispatch(setTabShown('arrived_to_user'));
                                         dispatch(setUserAssignedVehicle(response.trip.state.assigned));
                                         break;
-                                    case 'WAITING_FOR_VEHICLE': case 'TOWRADS_DESTINATION': case 'WAIT_TO_EXIT':
-                                        dispatch(setTabShown(response?.trip?.state.type === 'WAIT_TO_EXIT' ? 'arrived_to_destination' : null));
+                                    case 'WAITING_FOR_VEHICLE':
+                                        dispatch(setTabShown('fulfilled'));
                                         dispatch(setUserAssignedVehicle(response.trip.state.assigned));
                                         fetch(`http://${IP_ADDRESS}:3000/getVehicleCurrentRoute?plateNumber=${response.trip.state.assigned}`)
                                             .then(response => response.json())
                                             .then(vehicleResponse => {
-                                                dispatch(setRouteShown(response?.trip.state.type === 'vehicleToUser' ? 'vehicleToUser' : 'userToDestination'))
-                                                dispatch(setOrigin(response.trip.state.type === 'WAIT_TO_EXIT' ? vehicleResponse.destination : vehicleResponse.origin));
+                                                dispatch(setRouteShown('vehicleToUser'));
+                                                dispatch(setOrigin(vehicleResponse.origin));
+                                                dispatch(setDestination(vehicleResponse.destination));
+                                            })
+                                            .catch(error => console.log('error', error))
+                                        break;
+                                    case 'WAIT_TO_EXIT':
+                                        dispatch(setTabShown('arrived_to_destination'));
+                                        dispatch(setUserAssignedVehicle(response.trip.state.assigned));
+                                        fetch(`http://${IP_ADDRESS}:3000/getVehicleCurrentRoute?plateNumber=${response.trip.state.assigned}`)
+                                            .then(response => response.json())
+                                            .then(vehicleResponse => {
+                                                dispatch(setRouteShown(null))
+                                                dispatch(setOrigin(vehicleResponse.destination));
+                                                dispatch(setDestination(vehicleResponse.destination));
+                                            })
+                                            .catch(error => console.log('error', error))
+                                        break;
+                                    case 'TOWARDS_DESTINATION':
+                                        dispatch(setTabShown('with_user'));
+                                        dispatch(setUserAssignedVehicle(response.trip.state.assigned));
+                                        fetch(`http://${IP_ADDRESS}:3000/getVehicleCurrentRoute?plateNumber=${response.trip.state.assigned}`)
+                                            .then(response => response.json())
+                                            .then(vehicleResponse => {
+                                                dispatch(setRouteShown('userToDestination'))
+                                                dispatch(setOrigin(vehicleResponse.origin));
                                                 dispatch(setDestination(vehicleResponse.destination));
                                             })
                                             .catch(error => console.log('error', error))
@@ -115,7 +139,7 @@ const LoadingScreen = ({ navigation, route }) => {
                                 dispatch(setUserInfo(savedData));
                             })
                             .catch(e => alert('inside fetch error', e))
-                        setTimeout(() => navigation.navigate('Map'), 2000);
+                        setTimeout(() => navigation.navigate('Map'),1);
                     }
                 })
                 .catch(error => console.log('error', error))

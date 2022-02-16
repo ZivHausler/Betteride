@@ -21,7 +21,7 @@ const MapScreen = () => {
   const [currentTab, setCurrentTab] = useState(null);
 
   return (
-    <View style={[tw`relative`]}>
+    <View style={[tw`relative flex-1`]}>
       <Menu />
       <Map />
       <ToUserBottomSheet />
