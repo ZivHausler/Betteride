@@ -22,9 +22,11 @@ const ArrivedToDestination = () => {
     const destination = useSelector(selectDestination)
     const userData = useSelector(selectUserInfo);
     const userAssignedVehicle = useSelector(selectUserAssignedVehicle)
+    const [isLoading, setIsLoading] = useState(false);
 
     const finishTrip = async () => {
-        let response = await fetch(`http://${IP_ADDRESS}:3000/finishTrip?userID=${userData.id}&plateNumber=${userAssignedVehicle}`, {
+        setIsLoading(true);
+        let response = await fetch(`http://${IP_ADDRESS}:3000/finishTrip?userID=${userData.id}&plateNumber=${userAssignedVehicle}&canceled=${false}`, {
             method: "PUT",
         })
         // clear data -
@@ -33,20 +35,26 @@ const ArrivedToDestination = () => {
         dispatch(setRouteShown('userToDestination'));
         dispatch(setUserAssignedVehicle(null));
         dispatch(setVehicleLocation(null));
+        setIsLoading(false);
         dispatch(setTabShown('order'));
     }
 
     return (
-        <View style={[tw`bg-white items-center justify-between`, { width: '100%', height: '92%'}]}>
+        <View style={[tw`bg-white items-center justify-between`, { width: '100%', height: '92%' }]}>
             <Text style={[{ height: 35 }, tw`text-3xl font-bold`]}>Arrived to destination</Text>
             <View style={tw`justify-center items-center my-1 px-2`}>
                 <Text style={[tw`text-blue-400 font-semibold mb-1 text-center`, { fontSize: 16 }]}>You have arrived to {'destination'}!</Text>
                 <Text style={[tw`text-center my-1`, { fontSize: 16 }]}>To release the vehicle, please exit the right side of the it.</Text>
                 <Text style={[tw`text-center my-1`, { fontSize: 16 }]}>Once you have safely got out of the vehicle, press the button to release the vehicle.</Text>
             </View>
-            <TouchableOpacity activeOpacity={.5} onPress={finishTrip} style={styles.appButtonContainer}>
-                <Text style={styles.appButtonText}>I'm outside. You are free!</Text>
-            </TouchableOpacity>
+            {!isLoading ?
+                <TouchableOpacity activeOpacity={.5} onPress={finishTrip} style={styles.appButtonContainer}>
+                    <Text style={styles.appButtonText}>I'm outside. You are free!</Text>
+                </TouchableOpacity>
+                :
+                <View style={[styles.loadOrderContainer, tw`flex-row w-1/2 justify-center items-center p-3`]}>
+                    <ActivityIndicator color={'white'} style={tw``} />
+                </View>}
         </View >
     )
 }

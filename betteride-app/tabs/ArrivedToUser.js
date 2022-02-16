@@ -1,13 +1,11 @@
 import { useNavigation } from '@react-navigation/native'
 import React, { useState } from 'react'
 import { FlatList, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native'
-import { Icon } from 'react-native-elements'
 import { useSelector } from 'react-redux'
 import tw from 'tailwind-react-native-classnames'
 import { selectDestination, selectOrigin, selectTravelTimeInformation, setDestination, setOrigin, setRouteShown, setUserAssignedVehicle } from '../slices/navSlice'
 import { useDispatch } from "react-redux";
 import { setTabShown } from '../slices/navSlice'
-import Intl from 'intl/lib/core'
 import { Platform } from 'react-native'
 import { IP_ADDRESS } from "@env";
 import { selectUserInfo } from '../slices/userSlice'
@@ -23,6 +21,7 @@ const ArrivedToUser = () => {
     const userData = useSelector(selectUserInfo);
 
     const startRide = async () => {
+        setIsSearchingVehicle(true);
         let response = await fetch(`http://${IP_ADDRESS}:3001/api/generateRouteToVehicle?userID=${userData.id}`, {
             method: "PUT",
         })
@@ -30,11 +29,12 @@ const ArrivedToUser = () => {
         dispatch(setTabShown('with_user'));
         dispatch(setOrigin(response.origin));
         dispatch(setDestination(response.destination));
+        setIsSearchingVehicle(false);
         dispatch(setRouteShown('userToDestination'));
     }
 
     return (
-        <View style={[tw`bg-white items-center justify-between`, { width: '100%', height: '92%'}]}>
+        <View style={[tw`bg-white items-center justify-between`, { width: '100%', height: '92%' }]}>
             <Text style={[{ height: 35 }, tw`text-3xl font-bold`]}>Vehicle has arrived</Text>
             <View style={tw`px-4`}>
                 <Text style={[tw`text-blue-400 font-semibold mb-1 text-center`, { fontSize: 16 }]}>A vehicle with a plate number of 8XB-345 has just arrived to the requested location</Text>
@@ -49,9 +49,8 @@ const ArrivedToUser = () => {
                     <Text style={styles.appButtonText}>I'm inside and ready. Let's go!</Text>
                 </TouchableOpacity>
                 :
-                <View style={styles.loadOrderContainer}>
-                    <Text style={styles.loadingText}>Completing your order</Text>
-                    <ActivityIndicator color={'white'} style={tw`mt-1`} />
+                <View style={[styles.loadOrderContainer, tw`flex-row w-1/2 justify-center items-center p-3`]}>
+                    <ActivityIndicator color={'white'} style={tw``} />
                 </View>}
         </View >
     )

@@ -54,7 +54,7 @@ const WithUser = () => {
           </View>
         </View>
       </View>
-      <View style={tw` w-5/6  bg-gray-600 rounded-xl shadow-sm p-2 items-center shadow-md`}>
+      <View style={tw` w-5/6  bg-gray-600 rounded-xl p-2 items-center shadow-lg`}>
         <Text style={tw`text-white mb-2 font-semibold`}>Adjust vehicle functionality</Text>
         <View style={tw`flex-row justify-around w-full`}>
           <TouchableOpacity activeOpacity={0.7} style={[tw`items-center justify-center bg-gray-900 rounded-full`,{width: 50, height: 50}]}>

@@ -16,69 +16,10 @@ const SPACING = 10;
 const TOP_HEADER_HEIGHT = height * 0.3;
 const DURATION = 1000;
 
-const TravelDetailsScreen = ({ navigation, route,index }) => {
-
-    const { item } = route.params;
+const TravelDetailsScreen = ({ navigation, route }) => {
+    const { item, index, pickedColor } = route.params;
 
     const opacity = useRef(new Animated.Value(0)).current;
-
-    const categories = [
-        {
-            key: faker.datatype.uuid(),
-            title: 'Trip information:',
-            info: [
-                {
-                    title: 'Trip length:  ',
-                    text: faker.datatype.number() % 40 + ' km',
-                },
-                {
-                    title: 'Trip time:  ',
-                    text: faker.datatype.number() % 60 + 5 + ' minutes',
-                },
-                {
-                    title: 'Price:  ',
-                    text: faker.commerce.price() % 100 + ' ₪',
-                },
-                {
-                    title: 'Battery used:  ',
-                    text: faker.datatype.number() + ' mA',
-                },
-            ]
-        },
-        {
-            key: faker.datatype.uuid(),
-            title: 'Vehicle information:',
-            info: [
-                {
-                    title: 'Name:  ',
-                    text: faker.vehicle.vehicle(),
-                },
-                {
-                    title: 'Manufecturer:  ',
-                    text: faker.vehicle.manufacturer(),
-                },
-                {
-                    title: 'Model:  ',
-                    text: faker.vehicle.model(),
-                },
-                {
-                    title: 'Color:  ',
-                    text: faker.vehicle.color(),
-                },
-            ]
-        },
-        {
-            key: faker.datatype.uuid(),
-            title: 'General information:',
-            info: [
-                {
-                    title: 'Arrived in time?  ',
-                    text: faker.datatype.boolean() ? 'Yes' : 'No',
-                },
-            ]
-        },
-    ]
-
     useEffect(() => {
         Animated.timing(opacity, {
             toValue: 1,
@@ -103,17 +44,20 @@ const TravelDetailsScreen = ({ navigation, route,index }) => {
             <SharedElement id={`item.${index}.bg`}>
                 <LinearGradient style={[StyleSheet.absoluteFillObject, { height: height / 2 }]}
                     start={[1, 1]} end={[0, 0]}
-                    colors={item.color}
+                    colors={pickedColor}
                 />
             </SharedElement>
 
             <View style={[StyleSheet.absoluteFillObject, tw``]}>
                 <View style={[{ height: TOP_HEADER_HEIGHT }, tw`flex-row mt-5`]}>
-                    {/* Vehicle's image */}
                     <View style={[{ width: '50%', }, tw`h-full items-center justify-center`]}>
                         <SharedElement id={`item.${index}.image`}>
                             <Image style={[{ width: 180, height: 162, resizeMode: 'contain' }, tw``]} source={{ uri: 'https://links.papareact.com/3pn' }} />
                         </SharedElement>
+                        {item.canceled &&
+                            <SharedElement id={`item.${index}.canceled`} style={[StyleSheet.absoluteFillObject,tw`z-20`]} >
+                                <Image style={[tw`h-32 absolute w-32 left-1/2 top-1/2`, { transform: [{ translateX: -70 }, { translateY: -65 }], resizeMode: 'contain' }, tw``]} source={require('../assets/cancelledIcon.png')} />
+                            </SharedElement>}
                     </View>
                     <Animated.View style={[{ width: '60%', opacity }, tw`justify-center`]}>
                         <View style={{ width: '75%', marginBottom: 4 }}>
@@ -135,8 +79,7 @@ const TravelDetailsScreen = ({ navigation, route,index }) => {
                 <View style={[, styles.bg]}>
                     <ScrollView>
                         <View style={tw`pt-5`} >
-                            {item.categories.map((category, index) => {
-                                // Render the details for each category
+                            {item.fakerData.map((category, index) => {
                                 return <Animatable.View key={category.key} animation={'fadeInUp'}
                                     delay={DURATION + index * 2 * 50}
                                     style={{ marginVertical: SPACING, paddingHorizontal: SPACING }}>
@@ -153,7 +96,7 @@ const TravelDetailsScreen = ({ navigation, route,index }) => {
                                     })}
                                 </Animatable.View>
                             })}
-                            <Animatable.View style={tw`mt-4`} animation={'bounceIn'} delay={1900}>
+                            <Animatable.View style={tw`mt-10`} animation={'bounceIn'} delay={1900}>
                                 <Text style={tw`text-center text-gray-500`}>Anything seems wrong? Tell us at any time!</Text>
                                 <TouchableOpacity onPress={() => Linking.openURL('mailto:betteride_support@gmail.com?subject=I have a problem')}>
                                     <Text style={tw`text-center text-gray-500`}>email: betteride_support@gmail.com</Text>
@@ -215,10 +158,13 @@ const styles = StyleSheet.create({
 });
 
 TravelDetailsScreen.sharedElements = (route) => {
-    const { item } = route.params;
+    const { item, index, pickedColor } = route.params;
     return [
         {
             id: `item.${index}.bg`,
+        },
+        {
+            id: `item.${index}.canceled`,
         },
         {
             id: `item.${index}.image`,

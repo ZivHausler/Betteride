@@ -1,5 +1,5 @@
 import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View, Dimensions, SafeAreaView, Animated } from 'react-native';
-import React, { useRef, useEffect,useState } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import prevRides from '../assets/data/prevRides';
 import { useNavigation } from '@react-navigation/native';
 import { SharedElement } from 'react-navigation-shared-element';
@@ -30,7 +30,9 @@ const TravelHistoryScreen = () => {
         fetch(`http://${IP_ADDRESS}:3000/getUserHistory?userID=${userData.id}`, {
         })
             .then(response => response.json())
-            .then(response => setUserHistory(response))
+            .then(response => {
+                setUserHistory(response);
+            })
     }, [])
 
     return (
@@ -40,15 +42,20 @@ const TravelHistoryScreen = () => {
                 data={userHistory}
                 keyExtractor={item => Math.random()}
                 renderItem={({ item, index }) => {
-                    return <TouchableOpacity onPress={() => { navigation.navigate('Travel Details', { item,index }) }} style={{ marginBottom: SPACING, height: ITEM_HEIGHT }}>
+                    const pickedColor = colorsArray[index % colorsArray.length];
+                    return <TouchableOpacity onPress={() => { navigation.navigate('Travel Details', { item, index, pickedColor }) }} style={{ marginBottom: SPACING, height: ITEM_HEIGHT }}>
                         <Animatable.View animation={'fadeInUp'}
                             delay={index * 2 * 65} style={[tw`w-full h-full flex-row items-center`, {}]}>
                             <SharedElement id={`item.${index}.bg`} style={StyleSheet.absoluteFillObject} >
                                 <LinearGradient style={[StyleSheet.absoluteFillObject, { borderRadius: 16, padding: SPACING }]}
                                     start={[1, 1]} end={[0, 0]}
-                                    colors={colorsArray[index%colorsArray.length]}
+                                    colors={colorsArray[index % colorsArray.length]}
                                 />
                             </SharedElement>
+                            {item.canceled &&
+                                <SharedElement id={`item.${index}.canceled`} style={[StyleSheet.absoluteFillObject,tw`z-20`]} >
+                                    <Image style={[tw`h-32 absolute w-32 left-1/2 top-1/2`, { transform: [{ translateX: -60 }, { translateY: -65 }], resizeMode: 'contain' }, tw``]} source={require('../assets/cancelledIcon.png')} />
+                                </SharedElement>}
                             <Animated.View style={{ padding: 12, width: '78%', }}>
                                 <View style={{ width: '100%', marginBottom: 4 }}>
                                     <Text style={tw`font-bold`}>Date & Time:</Text>

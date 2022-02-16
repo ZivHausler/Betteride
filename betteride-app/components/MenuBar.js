@@ -10,6 +10,8 @@ import { useSelector } from 'react-redux';
 import { selectUserInfo, setUserInfo } from '../slices/userSlice';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+const intensity = 10;
+
 const features = [
     {
         id: 1,
@@ -47,7 +49,7 @@ const MenuBar = ({ openCloseMenuBar }) => {
 
     return (
         <View style={tw`w-full h-full z-0 flex-row`}>
-            <BlurView intensity={100} tint='light' style={tw`w-2/3 h-full shadow-2xl `}>
+            <BlurView intensity={60} tint='light' style={tw`w-full h-full shadow-2xl `}>
                 <SafeAreaView>
                     <TouchableOpacity activeOpacity={0.9} onPress={() => redirectHandler('Profile Screen')} style={tw`flex justify-center items-center h-1/3 mt-4`}>
                         <View style={[tw`h-40 w-40 rounded-full`, styles.profilePicture]}>
@@ -61,8 +63,7 @@ const MenuBar = ({ openCloseMenuBar }) => {
                         renderItem={({ item: { name, icon, link } }) => (
                             <TouchableOpacity onPress={() => redirectHandler(link)} style={tw`flex-row items-center p-5 shadow-xl`}>
                                 <Icon
-                                    style={[tw`mr-4 rounded-2xl p-3`, { backgroundColor: '#79aee2' }]} name={icon} type="material" color='black' size={25}
-                                />
+                                    style={[tw`mr-4 rounded-2xl p-3`, { backgroundColor: '#79aee2' }]} name={icon} type="material" color='black' size={25}/>
                                 <View>
                                     <Text style={tw`font-bold text-lg`}>{name}</Text>
                                 </View>
@@ -70,10 +71,10 @@ const MenuBar = ({ openCloseMenuBar }) => {
                         )} />
                 </SafeAreaView>
             </BlurView>
-            <BlurView intensity={10} tint={'light'} style={tw`w-1/3 h-full`}>
+            {/* <BlurView intensity={10} tint={'light'} style={tw`w-1/3 h-full`}>
                 <TouchableOpacity style={tw`h-full w-full`} onPress={openCloseMenuBar}>
                 </TouchableOpacity>
-            </BlurView>
+            </BlurView> */}
         </View>
     )
 }

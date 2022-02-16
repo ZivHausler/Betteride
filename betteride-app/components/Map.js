@@ -50,8 +50,8 @@ const Map = () => {
       setShowLocation({
         latitude: snapshot.val().currentLocation.location.lat,
         longitude: snapshot.val().currentLocation.location.lng,
-        latitudeDelta: 0.005,
-        longitudeDelta: 0.005,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
       })
     });
   }, [userAssignedVehicle]);

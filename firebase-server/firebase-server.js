@@ -7,9 +7,9 @@ const admin = require("firebase-admin");
 const serviceAccount = require("./permissions.json");
 const jsonParser = bodyParser.json({ limit: '10mb', extended: true });
 const googleMapsKey = "AIzaSyB9mAs9XA7wtN9RdKMKRig7wlHBfUtjt1g";
+const { faker } = require('@faker-js/faker');
 const { Expo } = require('expo-server-sdk')
-const IP_ADDRESS = "10.100.102.233"; // Daniel -> 10.100.102.233 // ZIV-> 10.0.0.8
-
+const IP_ADDRESS = "10.0.0.8"; // Daniel -> 10.100.102.233 // ZIV-> 10.0.0.8
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
@@ -27,7 +27,7 @@ app.listen(3000, async () => {
 // POST CALLS
 app.post("/pushRouteToVehicle", jsonParser, async (req, res) => {
   const { plateNumber, route, type } = req.body;
-  route['eta'] = new Date(new Date().getTime() + route.duration.value*1000).toLocaleString('en-US', {  hour12: false });
+  route['eta'] = new Date(new Date().getTime() + route.duration.value * 1000).toLocaleString('en-US', { hour12: false });
   route['index'] = 0;
   db.ref("vehicles").child(plateNumber).child("route").set(route);
   db.ref("vehicles").child(plateNumber).child("state").set({ type, assigned: route.user_id });
@@ -55,36 +55,112 @@ app.post("/loginUser", jsonParser, async (req, res) => {
   })
 });
 app.put("/finishTrip", async (req, res) => {
-  const { plateNumber, userID } = req.query;
+  const { plateNumber, userID, canceled } = req.query;
+  const isCanceled = canceled == 'true' ? true : false;
+  if (isCanceled) {
+    vehicleRef.child(plateNumber).child('route').child('canceled').set(true);
+    res.send("OK").status(200);
+  }
+  else {
+    const response = await finishTrip(plateNumber, userID, isCanceled);
+    if (response) res.send("OK").status(200);
+    else res.send("UPDATE FAILED").status(400);
+  }
+});
+
+const finishTrip = async (plateNumber, userID, canceled) => {
   try {
     //save trip to history
     await vehicleRef.child(plateNumber).child('route').once("value", (vehicleSnapshot) => {
       usersRef.child(userID).child('travelHistory').once("value", (userSnapshot) => {
         let tempArray = [];
-        if (userSnapshot.val()) {
-          tempArray = [...userSnapshot.val()];
-        }
+        if (userSnapshot.val()) tempArray = [...userSnapshot.val()];
         let tempTrip = vehicleSnapshot.val();
-        if (tempTrip?.user_id != undefined)
-          tempTrip.user_id = null;
+        if (tempTrip?.user_id != undefined) tempTrip.user_id = null;
         tempTrip['plateNumber'] = plateNumber;
+        tempTrip['fakerData'] = fakerData(vehicleSnapshot.val().distance.text, vehicleSnapshot.val().duration.text, vehicleSnapshot.val().duration.value * 1.5 / 300);
         tempTrip['date'] = new Date().toUTCString();
+        tempTrip['canceled'] = canceled ? true : null;
+        tempTrip['time_left'] = null;
+        tempTrip['km_left'] = null;
+        tempTrip['index'] = null;
+        tempTrip['steps'] = null;
         tempArray.push(tempTrip);
         usersRef.child(userID).child('travelHistory').set(tempArray);
       })
     })
-
     // reseting the states
     await usersRef.child(userID).child('trip').set(null);
     await vehicleRef.child(plateNumber).child('route').set(null);
-    await vehicleRef.child(plateNumber).child('state').set(null)
-    res.send("OK").status(200)
+    await vehicleRef.child(plateNumber).child('state').set(null);
+
+    return true;
   }
   catch (e) {
     console.log("error", e)
-    res.send("UPDATE FAILED").status(400)
+    return false;
   }
-});
+}
+
+
+const fakerData = (distance, duration, price) => {
+  return [
+    {
+      key: faker.datatype.uuid(),
+      title: 'Trip information:',
+      info: [
+        {
+          title: 'Trip length:  ',
+          text: distance,
+        },
+        {
+          title: 'Trip time:  ',
+          text: duration,
+        },
+        {
+          title: 'Price:  ',
+          text: price + ' ₪',
+        },
+        {
+          title: 'Battery used:  ',
+          text: faker.datatype.number() + ' mA',
+        },
+      ]
+    },
+    {
+      key: faker.datatype.uuid(),
+      title: 'Vehicle information:',
+      info: [
+        {
+          title: 'Name:  ',
+          text: faker.vehicle.vehicle(),
+        },
+        {
+          title: 'Manufecturer:  ',
+          text: faker.vehicle.manufacturer(),
+        },
+        {
+          title: 'Model:  ',
+          text: faker.vehicle.model(),
+        },
+        {
+          title: 'Color:  ',
+          text: faker.vehicle.color(),
+        },
+      ]
+    },
+    {
+      key: faker.datatype.uuid(),
+      title: 'General information:',
+      info: [
+        {
+          title: 'Arrived in time?  ',
+          text: faker.datatype.boolean() ? 'Yes' : 'No',
+        },
+      ]
+    },
+  ]
+}
 
 app.put("/updateUserVehicleState", jsonParser, async (req, res) => {
   const { plateNumber, userID, state } = req.body;
@@ -189,7 +265,6 @@ app.get('/getVehicleCurrentRoute', async (req, res) => {
   });
 })
 
-
 app.get("/getTotalDrivingTimeToUser", async (req, res) => {
   let sum = 0;
   db.ref("vehicles").once("value", (snapshot) => {
@@ -210,7 +285,7 @@ const getDirections = async (from, to) => {
     .catch((error) => console.log("error"));
 };
 // demo vehicle 
-const demoSpeed = 1 // how fast the car will rerender to the map
+const demoSpeed = 100 ; // how fast the car will rerender to the map
 const vehicleRef = db.ref("vehicles");
 const usersRef = db.ref('users');
 
@@ -218,12 +293,13 @@ const addDemoVehicleListener = (vehicle) => {
   vehicleRef.child(vehicle.plateNumber).child('route').child('index').on('value', function (dataSnapshot) {
     if (dataSnapshot.val() == null) return;
     vehicleRef.child(vehicle.plateNumber).once("value", snapshot => {
-      demoVehicle(snapshot.val())
+      try {
+        demoVehicle(snapshot.val())
+      }
+      catch (e) { console.log('error', e) }
     })
   });
 }
-
-
 
 const initDemo = () => {
   vehicleRef.once("value", snapshot => {
@@ -243,8 +319,11 @@ const demoVehicle = async (vehicle) => {
   // continue from last point (index)
   let i = 0;
   if (vehicle.route.index) i = vehicle.route.index.step;
-  console.log(vehicle.plateNumber + " with index = " + i)
   if (i < vehicle.route?.steps?.length) {
+    if (vehicle?.route?.canceled == true) {
+      await finishTrip(vehicle.plateNumber, vehicle.state.assigned, true);
+      return;
+    }
     // creating delay
     await delay(vehicle.route.steps[i].duration.value * 1000 / demoSpeed);
     // moving the vehicle to the next step
@@ -290,6 +369,9 @@ const calcETAAndKMLeft = async (plateNumber, index) => {
   return { timeLeft, kmLeft };
 }
 
+const removeRoute = (vehicle) => {
+
+}
 
 const translateCordsToAddress = async (coords) => {
   let address = await axios.get(`http://${IP_ADDRESS}:3001/api/translateCordsToAddress?lat=${coords.lat}&lng=${coords.lng}`, {
@@ -319,160 +401,13 @@ const sendMessageToUser = async (plateNumber, userID, type) => {
 }
 const delay = ms => new Promise(res => setTimeout(res, ms))
 
-
 // // EXPO
 // ~~ Send push notifications to user ~~
 async function sendPushNotification(message) {
   await axios.post('https://exp.host/--/api/v2/push/send', message)
     .then(function (response) {
-      // console.log(response)
     })
     .catch(function (error) {
       console.log('message has not been sent');
     });
-
-  // await fetch('https://exp.host/--/api/v2/push/send', {
-  //   method: 'POST',
-  //   headers: {
-  //     Accept: 'application/json',
-  //     'Accept-encoding': 'gzip, deflate',
-  //     'Content-Type': 'application/json',
-  //   },
-  //   body: JSON.stringify(message),
-  // });
 }
-
-
-// // Create a new Expo SDK client
-// // optionally providing an access token if you have enabled push security
-// // let expo = new Expo({ accessToken: process.env.EXPO_ACCESS_TOKEN });
-
-// // Create the messages that you want to send to clients
-// let messages = [];
-// for (let pushToken of somePushTokens) {
-//   // Each push token looks like ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]
-
-//   // Check that all your push tokens appear to be valid Expo push tokens
-//   if (!Expo.isExpoPushToken(pushToken)) {
-//     console.error(`Push token ${pushToken} is not a valid Expo push token`);
-//     continue;
-//   }
-
-//   // Construct a message (see https://docs.expo.io/push-notifications/sending-notifications/)
-//   messages.push({
-//     to: pushToken,
-//     sound: 'default',
-//     body: 'This is a test notification',
-//     data: { withSome: 'data' },
-//   })
-// }
-
-// // The Expo push notification service accepts batches of notifications so
-// // that you don't need to send 1000 requests to send 1000 notifications. We
-// // recommend you batch your notifications to reduce the number of requests
-// // and to compress them (notifications with similar content will get
-// // compressed).
-// let chunks = expo.chunkPushNotifications(messages);
-// let tickets = [];
-// (async () => {
-//   // Send the chunks to the Expo push notification service. There are
-//   // different strategies you could use. A simple one is to send one chunk at a
-//   // time, which nicely spreads the load out over time:
-//   for (let chunk of chunks) {
-//     try {
-//       let ticketChunk = await expo.sendPushNotificationsAsync(chunk);
-//       console.log(ticketChunk);
-//       tickets.push(...ticketChunk);
-//       // NOTE: If a ticket contains an error code in ticket.details.error, you
-//       // must handle it appropriately. The error codes are listed in the Expo
-//       // documentation:
-//       // https://docs.expo.io/push-notifications/sending-notifications/#individual-errors
-//     } catch (error) {
-//       console.error(error);
-//     }
-//   }
-// })();
-
-
-// // Later, after the Expo push notification service has delivered the
-// // notifications to Apple or Google (usually quickly, but allow the the service
-// // up to 30 minutes when under load), a "receipt" for each notification is
-// // created. The receipts will be available for at least a day; stale receipts
-// // are deleted.
-// //
-// // The ID of each receipt is sent back in the response "ticket" for each
-// // notification. In summary, sending a notification produces a ticket, which
-// // contains a receipt ID you later use to get the receipt.
-// //
-// // The receipts may contain error codes to which you must respond. In
-// // particular, Apple or Google may block apps that continue to send
-// // notifications to devices that have blocked notifications or have uninstalled
-// // your app. Expo does not control this policy and sends back the feedback from
-// // Apple and Google so you can handle it appropriately.
-// let receiptIds = [];
-// for (let ticket of tickets) {
-//   // NOTE: Not all tickets have IDs; for example, tickets for notifications
-//   // that could not be enqueued will have error information and no receipt ID.
-//   if (ticket.id) {
-//     receiptIds.push(ticket.id);
-//   }
-// }
-
-// let receiptIdChunks = expo.chunkPushNotificationReceiptIds(receiptIds);
-// (async () => {
-//   // Like sending notifications, there are different strategies you could use
-//   // to retrieve batches of receipts from the Expo service.
-//   for (let chunk of receiptIdChunks) {
-//     try {
-//       let receipts = await expo.getPushNotificationReceiptsAsync(chunk);
-//       console.log(receipts);
-
-//       // The receipts specify whether Apple or Google successfully received the
-//       // notification and information about an error, if one occurred.
-//       for (let receiptId in receipts) {
-//         let { status, message, details } = receipts[receiptId];
-//         if (status === 'ok') {
-//           continue;
-//         } else if (status === 'error') {
-//           console.error(
-//             `There was an error sending a notification: ${message}`
-//           );
-//           if (details && details.error) {
-//             // The error codes are listed in the Expo documentation:
-//             // https://docs.expo.io/push-notifications/sending-notifications/#individual-errors
-//             // You must handle the errors appropriately.
-//             console.error(`The error code is ${details.error}`);
-//           }
-//         }
-//       }
-//     } catch (error) {
-//       console.error(error);
-//     }
-//   }
-// })();
-
-// const testPushNotifications = (token) => {
-//   const message = [{
-//     to: token,
-//     sound: 'default',
-//     body: 'This is a test notification',
-//     data: { withSome: 'data' },
-//   }]
-//     // let chuck = Expo.chunkPushNotifications(messages)
-//     (async () => {
-//       // Send the chunks to the Expo push notification service. There are
-//       // different strategies you could use. A simple one is to send one chunk at a
-//       // time, which nicely spreads the load out over time:
-//       try {
-//         let ticketChunk = await Expo.sendPushNotificationsAsync(message);
-//         console.log(ticketChunk);
-//         tickets.push(...ticketChunk);
-//         // NOTE: If a ticket contains an error code in ticket.details.error, you
-//         // must handle it appropriately. The error codes are listed in the Expo
-//         // documentation:
-//         // https://docs.expo.io/push-notifications/sending-notifications/#individual-errors
-//       } catch (error) {
-//         console.error(error);
-//       }
-//     })
-// }

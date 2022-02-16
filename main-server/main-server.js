@@ -10,7 +10,7 @@ const { dir } = require("console");
 const googleMapsKey = "AIzaSyB9mAs9XA7wtN9RdKMKRig7wlHBfUtjt1g";
 const distance = require("google-distance-matrix");
 const munkres = require("munkres-js");
-const IP_ADDRESS = "10.100.102.233"; // Daniel -> 10.100.102.233 // ZIV-> 10.0.0.8
+const IP_ADDRESS = "10.0.0.8"; // Daniel -> 10.100.102.233 // ZIV-> 10.0.0.8
 
 app.use(cors({ origin: true }));
 
