@@ -25,7 +25,7 @@ const FulfilledOrder = () => {
     const cancelTrip = async () => {
         setIsLoading(true);
         setModalVisible(false);
-        let response = await fetch(`http://${IP_ADDRESS}:3000/finishTrip?userID=${userData.id}&plateNumber=${userAssignedVehicle}&canceled=${true}`, {
+        let response = await fetch(`https://betteride-firebase-server-3mmcqmln7a-ew.a.run.app/finishTrip?userID=${userData.id}&plateNumber=${userAssignedVehicle}&canceled=${true}`, {
             method: "PUT",
         })
         //reset all fields

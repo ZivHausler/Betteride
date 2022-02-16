@@ -73,7 +73,7 @@ const LoadingScreen = ({ navigation, route }) => {
                     else {
                         let user = JSON.parse(result).user;
                         user['token'] = token;
-                        fetch(`http://${IP_ADDRESS}:3000/loginUser`, {
+                        fetch(`https://betteride-firebase-server-3mmcqmln7a-ew.a.run.app/loginUser`, {
                             method: "POST",
                             headers: {
                                 "Content-Type": "application/json",
@@ -97,7 +97,7 @@ const LoadingScreen = ({ navigation, route }) => {
                                     case 'WAITING_FOR_VEHICLE':
                                         dispatch(setTabShown('fulfilled'));
                                         dispatch(setUserAssignedVehicle(response.trip.state.assigned));
-                                        fetch(`http://${IP_ADDRESS}:3000/getVehicleCurrentRoute?plateNumber=${response.trip.state.assigned}`)
+                                        fetch(`https://betteride-firebase-server-3mmcqmln7a-ew.a.run.app/getVehicleCurrentRoute?plateNumber=${response.trip.state.assigned}`)
                                             .then(response => response.json())
                                             .then(vehicleResponse => {
                                                 dispatch(setRouteShown('vehicleToUser'));
@@ -109,7 +109,7 @@ const LoadingScreen = ({ navigation, route }) => {
                                     case 'WAIT_TO_EXIT':
                                         dispatch(setTabShown('arrived_to_destination'));
                                         dispatch(setUserAssignedVehicle(response.trip.state.assigned));
-                                        fetch(`http://${IP_ADDRESS}:3000/getVehicleCurrentRoute?plateNumber=${response.trip.state.assigned}`)
+                                        fetch(`https://betteride-firebase-server-3mmcqmln7a-ew.a.run.app/getVehicleCurrentRoute?plateNumber=${response.trip.state.assigned}`)
                                             .then(response => response.json())
                                             .then(vehicleResponse => {
                                                 dispatch(setRouteShown(null))
@@ -121,7 +121,7 @@ const LoadingScreen = ({ navigation, route }) => {
                                     case 'TOWARDS_DESTINATION':
                                         dispatch(setTabShown('with_user'));
                                         dispatch(setUserAssignedVehicle(response.trip.state.assigned));
-                                        fetch(`http://${IP_ADDRESS}:3000/getVehicleCurrentRoute?plateNumber=${response.trip.state.assigned}`)
+                                        fetch(`https://betteride-firebase-server-3mmcqmln7a-ew.a.run.app/getVehicleCurrentRoute?plateNumber=${response.trip.state.assigned}`)
                                             .then(response => response.json())
                                             .then(vehicleResponse => {
                                                 dispatch(setRouteShown('userToDestination'))
@@ -218,7 +218,7 @@ const LoadingScreen = ({ navigation, route }) => {
                         user['token'] = token;
                         // get higher photo quality
                         user.photoUrl = user.photoUrl.replace('96', '500')
-                        fetch(`http://${IP_ADDRESS}:3000/loginUser`, {
+                        fetch(`https://betteride-firebase-server-3mmcqmln7a-ew.a.run.app/loginUser`, {
                             method: "POST",
                             headers: {
                                 "Content-Type": "application/json",

@@ -57,13 +57,13 @@ const WithUser = () => {
       <View style={tw` w-5/6  bg-gray-600 rounded-xl p-2 items-center shadow-lg`}>
         <Text style={tw`text-white mb-2 font-semibold`}>Adjust vehicle functionality</Text>
         <View style={tw`flex-row justify-around w-full`}>
-          <TouchableOpacity activeOpacity={0.7} style={[tw`items-center justify-center bg-gray-900 rounded-full`,{width: 50, height: 50}]}>
+          <TouchableOpacity activeOpacity={0.2} style={[tw`items-center justify-center bg-gray-900 rounded-full`,{width: 50, height: 50}]}>
             <Image style={[{ width: 40, height: 40, resizeMode: 'contain' }, tw``]} source={require('../assets/acIcon.png')} />
           </TouchableOpacity>
-          <TouchableOpacity activeOpacity={0.7} style={[tw`items-center justify-center bg-gray-900 rounded-full`,{width: 50, height: 50}]}>
+          <TouchableOpacity activeOpacity={0.2} style={[tw`items-center justify-center bg-gray-900 rounded-full`,{width: 50, height: 50}]}>
             <Image style={[{ width: 40, height: 40, resizeMode: 'contain' }, tw``]} source={require('../assets/musicIcon.png')} />
           </TouchableOpacity>
-          <TouchableOpacity activeOpacity={0.7} style={[tw`items-center justify-center bg-gray-900 rounded-full`,{width: 50, height: 50}]}>
+          <TouchableOpacity activeOpacity={0.2} style={[tw`items-center justify-center bg-gray-900 rounded-full`,{width: 50, height: 50}]}>
           <Image style={[{ width: 40, height: 40, resizeMode: 'contain' }, tw``]} source={require('../assets/lightIcon.png')} />
           </TouchableOpacity>
         </View>

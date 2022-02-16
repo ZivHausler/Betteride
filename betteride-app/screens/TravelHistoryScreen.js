@@ -27,7 +27,7 @@ const TravelHistoryScreen = () => {
         return `${newDate}, ${newTime}`;
     }
     useEffect(() => {
-        fetch(`http://${IP_ADDRESS}:3000/getUserHistory?userID=${userData.id}`, {
+        fetch(`https://betteride-firebase-server-3mmcqmln7a-ew.a.run.app/getUserHistory?userID=${userData.id}`, {
         })
             .then(response => response.json())
             .then(response => {

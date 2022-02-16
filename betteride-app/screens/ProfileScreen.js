@@ -72,7 +72,7 @@ const ProfileScreen = () => {
             firstName,
             lastName,
         }
-        await fetch(`http://${IP_ADDRESS}:3000/updateUserInfo`, {
+        await fetch(`https://betteride-firebase-server-3mmcqmln7a-ew.a.run.app/updateUserInfo`, {
             method: "PUT",
             headers: {
                 "Content-Type": "application/json",

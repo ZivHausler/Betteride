@@ -22,7 +22,7 @@ const ArrivedToUser = () => {
 
     const startRide = async () => {
         setIsSearchingVehicle(true);
-        let response = await fetch(`http://${IP_ADDRESS}:3001/api/generateRouteToVehicle?userID=${userData.id}`, {
+        let response = await fetch(`https://betteride-main-server-3mmcqmln7a-ew.a.run.app/api/generateRouteToVehicle?userID=${userData.id}`, {
             method: "PUT",
         })
         response = await response.json();

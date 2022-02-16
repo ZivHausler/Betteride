@@ -26,7 +26,7 @@ const ArrivedToDestination = () => {
 
     const finishTrip = async () => {
         setIsLoading(true);
-        let response = await fetch(`http://${IP_ADDRESS}:3000/finishTrip?userID=${userData.id}&plateNumber=${userAssignedVehicle}&canceled=${false}`, {
+        let response = await fetch(`https://betteride-firebase-server-3mmcqmln7a-ew.a.run.app/finishTrip?userID=${userData.id}&plateNumber=${userAssignedVehicle}&canceled=${false}`, {
             method: "PUT",
         })
         // clear data -

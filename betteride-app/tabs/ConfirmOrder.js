@@ -34,8 +34,7 @@ const ConfirmOrder = () => {
     // then fetch the nearest vehicle
     // then do this VV
     // const baseUrl = Platform.OS === 'android' ? 'http://'+IP_ADDRESS : 'http://localhost';
-    const baseUrl = `http://${IP_ADDRESS}`;        //'http://'+IP_ADDRESS;
-    fetch(baseUrl + `:3001/api/OrderVehicle?userOrigin=${origin.description}
+    fetch(`https://betteride-main-server-3mmcqmln7a-ew.a.run.app/api/OrderVehicle?userOrigin=${origin.description}
     &userDestination=${destination.description}&userID=${userData.id}`, {
       method: 'GET',
       headers: {
